@@ -787,3 +787,5 @@ renderFan();
 </script>
 </body>
 </html>
+ document.getElementById('prevBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex - 1 + TAROT_CARDS.length) % TAROT_CARDS.length; renderFan(); setStatus('浏览牌组'); });
+ document.getElementById('nextBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex + 1) % TAROT_CARDS.length; renderFan(); setStatus('浏览牌组'); });
