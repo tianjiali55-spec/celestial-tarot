@@ -1,648 +1,748 @@
- <!DOCTYPE html>
- <html lang="zh-CN">
- <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-   <meta name="apple-mobile-web-app-capable" content="yes">
-   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-   <meta name="format-detection" content="telephone=no">
-   <title>星象手势塔罗牌</title>
-   <link rel="preconnect" href="https://fonts.googleapis.com">
-   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
-   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-   <style>
-     :root {
-       --gold: #d4af37;
-       --gold-light: #f0d68a;
-       --gold-dark: #8a6e2f;
-       --navy: #0b1026;
-       --navy-light: #141b35;
-       --cream: #f0e6d3;
-     }
-     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-     html, body { height: 100%; }
-     body {
-       background:
-         radial-gradient(ellipse at center, rgba(20, 27, 53, 0.9) 0%, rgba(6, 9, 20, 1) 70%),
-         linear-gradient(135deg, #0b1026 0%, #050714 100%);
-       color: var(--cream);
-       font-family: 'Noto Serif SC', 'Cinzel', serif;
-       overflow: hidden;
-       display: flex;
-       align-items: center;
-       justify-content: center;
-     }
-     .stars {
-       position: fixed;
-       inset: 0;
-       pointer-events: none;
-       background-image:
-         radial-gradient(2px 2px at 20px 30px, rgba(240, 214, 138, 0.8), transparent),
-         radial-gradient(2px 2px at 40px 70px, rgba(240, 214, 138, 0.6), transparent),
-         radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.7), transparent),
-         radial-gradient(2px 2px at 160px 120px, rgba(240, 214, 138, 0.5), transparent),
-         radial-gradient(1px 1px at 230px 80px, rgba(255, 255, 255, 0.6), transparent),
-         radial-gradient(2px 2px at 300px 160px, rgba(240, 214, 138, 0.5), transparent),
-         radial-gradient(1px 1px at 400px 50px, rgba(255, 255, 255, 0.7), transparent),
-         radial-gradient(2px 2px at 500px 140px, rgba(240, 214, 138, 0.6), transparent);
-       background-size: 520px 220px;
-       opacity: 0.35;
-       animation: twinkle 8s ease-in-out infinite alternate;
-     }
-     @keyframes twinkle { from { opacity: 0.25; } to { opacity: 0.5; } }
-     .stage {
-       position: relative;
-       width: min(720px, 96vw);
-       display: flex;
-       flex-direction: column;
-       align-items: center;
-       gap: 18px;
-       z-index: 2;
-       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-     }
-     .title {
-       font-family: 'Cinzel', serif;
-       font-size: clamp(26px, 5vw, 42px);
-       color: var(--gold-light);
-       text-align: center;
-       letter-spacing: 0.18em;
-       text-shadow: 0 0 24px rgba(212, 175, 55, 0.45), 0 2px 8px rgba(0, 0, 0, 0.8);
-     }
-     .subtitle { font-size: 14px; color: var(--gold-dark); letter-spacing: 0.12em; }
-     .video-frame {
-       position: relative;
-       width: 100%;
-       border-radius: 24px;
-       overflow: hidden;
-       border: 2px solid rgba(212, 175, 55, 0.55);
-       box-shadow:
-         0 0 0 1px rgba(212, 175, 55, 0.2),
-         0 0 60px rgba(212, 175, 55, 0.18),
-         inset 0 0 80px rgba(0, 0, 0, 0.6);
-       background: var(--navy-light);
-     }
-     .corner {
-       position: absolute;
-       width: 56px;
-       height: 56px;
-       border: 2px solid var(--gold);
-       z-index: 3;
-       pointer-events: none;
-     }
-     .corner.tl { top: 12px; left: 12px; border-right: none; border-bottom: none; border-top-left-radius: 14px; }
-     .corner.tr { top: 12px; right: 12px; border-left: none; border-bottom: none; border-top-right-radius: 14px; }
-     .corner.bl { bottom: 12px; left: 12px; border-right: none; border-top: none; border-bottom-left-radius: 14px; }
-     .corner.br { bottom: 12px; right: 12px; border-left: none; border-top: none; border-bottom-right-radius: 14px; }
-     video {
-       width: 100%;
-       display: block;
-       transform: rotateY(180deg);
-       min-height: 320px;
-       object-fit: cover;
-       background: #000;
-     }
-     .mandala {
-       position: absolute;
-       inset: 0;
-       display: flex;
-       align-items: center;
-       justify-content: center;
-       pointer-events: none;
-       opacity: 0.12;
-       z-index: 1;
-     }
-     .mandala svg { width: 78%; height: 78%; animation: spin 60s linear infinite; }
-     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-     #status {
-       position: absolute;
-       top: 18px;
-       left: 50%;
-       transform: translateX(-50%);
-       background: rgba(11, 16, 38, 0.82);
-       color: var(--gold-light);
-       padding: 7px 18px;
-       border-radius: 30px;
-       font-size: 14px;
-       border: 1px solid rgba(212, 175, 55, 0.45);
-       backdrop-filter: blur(6px);
-       z-index: 4;
-       white-space: nowrap;
-     }
-     .overlay {
-       position: absolute;
-       bottom: 22px;
-       left: 50%;
-       transform: translateX(-50%);
-       background: rgba(11, 16, 38, 0.88);
-       padding: 18px 26px;
-       border-radius: 18px;
-       text-align: center;
-       min-width: 260px;
-       max-width: 86%;
-       border: 1px solid rgba(212, 175, 55, 0.45);
-       backdrop-filter: blur(10px);
-       z-index: 4;
-     }
-     .card-name {
-       font-family: 'Cinzel', serif;
-       font-size: 26px;
-       font-weight: 700;
-       color: var(--gold-light);
-       margin-bottom: 6px;
-       text-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
-     }
-     .card-meaning {
-       font-size: 15px;
-       line-height: 1.6;
-       color: var(--cream);
-       min-height: 48px;
-     }
-     .hint {
-       font-size: 13px;
-       color: var(--gold-dark);
-       margin-top: 8px;
-       font-style: italic;
-     }
-     .loading-dots::after {
-       content: '...';
-       animation: dots 1.2s steps(4) infinite;
-     }
-     @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
-     .card-display {
-       position: absolute;
-       top: 50%;
-       left: 50%;
-       width: 160px;
-       height: 260px;
-       transform: translate(-50%, -50%);
-       perspective: 1000px;
-       z-index: 5;
-       pointer-events: none;
-       opacity: 0;
-       transition: opacity 0.4s;
-     }
-     .card-display.show { opacity: 1; }
-     .card-inner {
-       width: 100%;
-       height: 100%;
-       position: relative;
-       transform-style: preserve-3d;
-       transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-     }
-     .card-display.flipped .card-inner { transform: rotateY(180deg); }
-     .card-face {
-       position: absolute;
-       inset: 0;
-       backface-visibility: hidden;
-       -webkit-backface-visibility: hidden;
-       border-radius: 16px;
-       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
-       overflow: hidden;
-       border: 2px solid rgba(212, 175, 55, 0.65);
-     }
-     .card-back { background: url('card-back.png') center/cover no-repeat; }
-     .card-front {
-       background: linear-gradient(160deg, #161d3a 0%, #0b1026 100%);
-       transform: rotateY(180deg);
-       display: flex;
-       flex-direction: column;
-       align-items: center;
-       justify-content: center;
-       padding: 16px;
-       text-align: center;
-     }
-     .card-front .arcana-symbol {
-       font-size: 52px;
-       margin-bottom: 8px;
-       filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.5));
-     }
-     .card-front .arcana-name {
-       font-family: 'Cinzel', serif;
-       font-size: 18px;
-       color: var(--gold-light);
-       letter-spacing: 0.1em;
-     }
-     .controls {
-       display: flex;
-       gap: 12px;
-       flex-wrap: wrap;
-       justify-content: center;
-       z-index: 3;
-     }
-     .btn {
-       background: linear-gradient(135deg, rgba(212, 175, 55, 0.18), rgba(212, 175, 55, 0.08));
-       border: 1px solid rgba(212, 175, 55, 0.6);
-       color: var(--gold-light);
-       padding: 14px 24px;
-       border-radius: 30px;
-       cursor: pointer;
-       font-family: inherit;
-       font-size: 16px;
-       letter-spacing: 0.08em;
-       transition: all 0.25s;
-       backdrop-filter: blur(4px);
-       touch-action: manipulation;
-       -webkit-touch-callout: none;
-       user-select: none;
-       min-width: 120px;
-     }
-     .btn:active { transform: scale(0.96); }
-     .btn:hover {
-       background: linear-gradient(135deg, rgba(212, 175, 55, 0.32), rgba(212, 175, 55, 0.12));
-       box-shadow: 0 0 20px rgba(212, 175, 55, 0.25);
-       transform: translateY(-1px);
-     }
-     .api-panel {
-       display: none;
-       position: fixed;
-       top: 50%;
-       left: 50%;
-       transform: translate(-50%, -50%);
-       background: rgba(11, 16, 38, 0.96);
-       border: 1px solid var(--gold);
-       border-radius: 18px;
-       padding: 24px;
-       width: min(380px, 90vw);
-       z-index: 20;
-       box-shadow: 0 0 60px rgba(0, 0, 0, 0.7);
-     }
-     .api-panel.show { display: block; }
-     .api-panel h3 { color: var(--gold-light); margin-bottom: 12px; font-family: 'Cinzel', serif; }
-     .api-panel input {
-       width: 100%;
-       padding: 12px 14px;
-       border-radius: 8px;
-       border: 1px solid var(--gold-dark);
-       background: rgba(0, 0, 0, 0.4);
-       color: var(--cream);
-       margin-bottom: 12px;
-       font-family: inherit;
-       font-size: 16px;
-     }
-     .api-panel p { font-size: 13px; color: var(--gold-dark); margin-bottom: 14px; line-height: 1.5; }
-     .veil {
-       display: none;
-       position: fixed;
-       inset: 0;
-       background: rgba(0, 0, 0, 0.6);
-       z-index: 19;
-     }
-     .veil.show { display: block; }
-     .fist-bar {
-       position: absolute;
-       bottom: 0;
-       left: 0;
-       height: 3px;
-       background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
-       width: 0%;
-       transition: width 0.1s linear;
-       z-index: 4;
-     }
-     .ipad-note {
-       position: absolute;
-       top: 50%;
-       left: 50%;
-       transform: translate(-50%, -50%);
-       width: 86%;
-       max-width: 420px;
-       background: rgba(11, 16, 38, 0.94);
-       border: 1px solid rgba(212, 175, 55, 0.5);
-       border-radius: 18px;
-       padding: 22px;
-       text-align: center;
-       z-index: 6;
-       display: none;
-     }
-     .ipad-note.show { display: block; }
-     .ipad-note h4 { color: var(--gold-light); margin-bottom: 10px; font-family: 'Cinzel', serif; }
-     .ipad-note p { font-size: 14px; line-height: 1.6; color: var(--cream); }
-     @media (max-width: 768px) {
-       .stage { gap: 12px; }
-       .video-frame { border-radius: 18px; }
-       .corner { width: 40px; height: 40px; }
-       .overlay { padding: 14px 18px; min-width: 220px; }
-       .card-name { font-size: 22px; }
-       .card-display { width: 130px; height: 210px; }
-       .btn { padding: 12px 18px; font-size: 15px; min-width: 100px; }
-     }
-     @media (orientation: landscape) and (max-height: 600px) {
-       .stage { flex-direction: row; gap: 20px; align-items: center; justify-content: center; }
-       .video-frame { width: 55vw; max-width: 520px; }
-       .title-block { text-align: center; }
-       .controls { flex-direction: column; width: auto; }
-     }
-   </style>
- </head>
- <body>
-   <div class="stars"></div>
-   <div class="veil" id="veil"></div>
-   <div class="api-panel" id="apiPanel">
-     <h3>设置 Gemini API Key</h3>
-     <p>输入后可启用 AI 解读。若留空，将使用本地牌意库（离线可用）。<br>密钥仅保存在当前页面，不会上传。</p>
-     <input type="text" id="apiKeyInput" placeholder="AIzaSy...">
-     <div class="controls" style="margin:0">
-       <button class="btn" id="saveKeyBtn">保存</button>
-       <button class="btn" id="closePanelBtn">取消</button>
-     </div>
-   </div>
-   <div class="stage">
-     <div class="title-block">
-       <div class="title">CELESTIAL TAROT</div>
-       <div class="subtitle">星象手势塔罗牌</div>
-     </div>
-     <div class="video-frame" id="videoFrame">
-       <div class="corner tl"></div>
-       <div class="corner tr"></div>
-       <div class="corner bl"></div>
-       <div class="corner br"></div>
-       <div class="mandala">
-         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-           <defs>
-             <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
-               <stop offset="0%" stop-color="#d4af37" stop-opacity="0.9"/>
-               <stop offset="100%" stop-color="#8a6e2f" stop-opacity="0.5"/>
-             </linearGradient>
-           </defs>
-           <circle cx="100" cy="100" r="92" fill="none" stroke="url(#g1)" stroke-width="0.5"/>
-           <circle cx="100" cy="100" r="74" fill="none" stroke="url(#g1)" stroke-width="0.5" stroke-dasharray="4 4"/>
-           <circle cx="100" cy="100" r="56" fill="none" stroke="url(#g1)" stroke-width="0.5"/>
-           <path d="M100 20 L108 84 L170 84 L120 122 L138 184 L100 146 L62 184 L80 122 L30 84 L92 84 Z" fill="none" stroke="url(#g1)" stroke-width="0.7"/>
-           <path d="M100 36 L104 92 L160 92 L112 124 L128 176 L100 140 L72 176 L88 124 L40 92 L96 92 Z" fill="none" stroke="url(#g1)" stroke-width="0.6"/>
-           <circle cx="100" cy="100" r="12" fill="none" stroke="url(#g1)" stroke-width="0.7"/>
-           <path d="M100 8 A8 8 0 0 1 108 16 A8 8 0 0 1 100 8 M100 192 A8 8 0 0 1 92 184 A8 8 0 0 1 100 192 M8 100 A8 8 0 0 1 16 92 A8 8 0 0 1 8 100 M192 100 A8 8 0 0 1 184 108 A8 8 0 0 1 192 100" fill="#d4af37" fill-opacity="0.7"/>
-           <g stroke="url(#g1)" stroke-width="0.5">
-             <line x1="100" y1="4" x2="100" y2="196"/>
-             <line x1="4" y1="100" x2="196" y2="100"/>
-             <line x1="30" y1="30" x2="170" y2="170"/>
-             <line x1="170" y1="30" x2="30" y2="170"/>
-           </g>
-         </svg>
-       </div>
-       <video id="webcam" playsinline muted autoplay></video>
-       <div class="ipad-note" id="ipadNote">
-         <h4>📱 iPad 使用提示</h4>
-         <p>首次使用请允许摄像头权限。<br>握拳 3 秒即可抽牌，也可点下方「手动抽牌」。<br>建议横屏放置 iPad，保持手部在画面中央。</p>
-         <button class="btn" id="dismissNoteBtn" style="margin-top:14px">知道了</button>
-       </div>
-       <div class="card-display" id="cardDisplay">
-         <div class="card-inner" id="cardInner">
-           <div class="card-face card-back"></div>
-           <div class="card-face card-front">
-             <div class="arcana-symbol" id="arcanaSymbol">🌙</div>
-             <div class="arcana-name" id="arcanaName">命运之轮</div>
-           </div>
-         </div>
-       </div>
-       <div class="overlay" id="overlay">
-         <div class="card-name" id="cardName">🃏 命运之轮</div>
-         <div class="card-meaning" id="cardMeaning">握拳保持 3 秒，从星象中抽一张牌</div>
-         <div class="hint" id="hint">🤛 握拳 → 抽牌 → AI 解读</div>
-       </div>
-       <div class="fist-bar" id="fistBar"></div>
-     </div>
-     <div class="controls">
-       <button class="btn" id="drawBtn">🎴 手动抽牌</button>
-       <button class="btn" id="toggleCamBtn">📷 重开摄像头</button>
-       <button class="btn" id="apiBtn">🔑 设置 API Key</button>
-     </div>
-   </div>
-   <script>
-     const GEMINI_API_KEY_PLACEHOLDER = '';
-     let GEMINI_API_KEY = localStorage.getItem('tarot_gemini_key') || '';
-     const TAROT_CARDS = [
-       { name: '愚者', symbol: '🃏', meaning: '新的开始，勇敢迈出第一步' },
-       { name: '魔术师', symbol: '✨', meaning: '你拥有创造奇迹的能力' },
-       { name: '女祭司', symbol: '🌙', meaning: '倾听内心的声音' },
-       { name: '皇后', symbol: '🌸', meaning: '丰盛与滋养正在到来' },
-       { name: '皇帝', symbol: '👑', meaning: '稳定与秩序带来力量' },
-       { name: '教皇', symbol: '📜', meaning: '寻求智慧导师的指引' },
-       { name: '恋人', symbol: '💞', meaning: '重要的选择即将来临' },
-       { name: '战车', symbol: '🏆', meaning: '坚定的意志带你征服挑战' },
-       { name: '力量', symbol: '🦁', meaning: '温柔比强硬更有力量' },
-       { name: '隐者', symbol: '🕯️', meaning: '独处中寻得智慧之光' },
-       { name: '命运之轮', symbol: '☸️', meaning: '转变是唯一的永恒' },
-       { name: '正义', symbol: '⚖️', meaning: '因果循环，一切平衡' },
-       { name: '倒吊人', symbol: '🙃', meaning: '换个角度看世界' },
-       { name: '死神', symbol: '💀', meaning: '结束即是新的开始' },
-       { name: '节制', symbol: '🏺', meaning: '和谐与平衡是关键' },
-       { name: '恶魔', symbol: '⛓️', meaning: '挣脱束缚你的枷锁' },
-       { name: '高塔', symbol: '🌩️', meaning: '颠覆是为了重建' },
-       { name: '星星', symbol: '⭐', meaning: '希望永远在前方' },
-       { name: '月亮', symbol: '🌑', meaning: '相信你的直觉' },
-       { name: '太阳', symbol: '☀️', meaning: '成功与喜悦照耀你' },
-       { name: '审判', symbol: '📯', meaning: '觉醒的时刻到了' },
-       { name: '世界', symbol: '🌍', meaning: '圆满与完成，恭喜！' }
-     ];
-     const isMobile = /iPad|iPhone|iPod|Android|Mobile/i.test(navigator.userAgent);
-     const isIPad = /iPad/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-     let isFist = false;
-     let fistStartTime = 0;
-     let isProcessing = false;
-     let currentCard = TAROT_CARDS[10];
-     let stream = null;
-     let hands = null;
-     let frameCount = 0;
-     const video = document.getElementById('webcam');
-     const statusEl = document.getElementById('status');
-     const cardNameEl = document.getElementById('cardName');
-     const cardMeaningEl = document.getElementById('cardMeaning');
-     const hintEl = document.getElementById('hint');
-     const cardDisplay = document.getElementById('cardDisplay');
-     const cardInner = document.getElementById('cardInner');
-     const arcanaSymbol = document.getElementById('arcanaSymbol');
-     const arcanaName = document.getElementById('arcanaName');
-     const fistBar = document.getElementById('fistBar');
-     const apiPanel = document.getElementById('apiPanel');
-     const veil = document.getElementById('veil');
-     const apiKeyInput = document.getElementById('apiKeyInput');
-     const ipadNote = document.getElementById('ipadNote');
-     function setStatus(text) { statusEl.textContent = text; }
-     async function startCamera() {
-       try {
-         if (stream) { stream.getTracks().forEach(t => t.stop()); }
-         const constraints = {
-           video: {
-             width: { ideal: isIPad ? 480 : 640 },
-             height: { ideal: isIPad ? 360 : 480 },
-             facingMode: 'user'
-           },
-           audio: false
-         };
-         stream = await navigator.mediaDevices.getUserMedia(constraints);
-         video.srcObject = stream;
-         await video.play();
-         setStatus('✅ 摄像头已就绪');
-         return true;
-       } catch (e) {
-         console.error(e);
-         setStatus('❌ 摄像头被拒绝');
-         cardMeaningEl.textContent = '请允许摄像头权限后刷新页面';
-         return false;
-       }
-     }
-     function initHands() {
-       if (typeof Hands === 'undefined') {
-         setStatus('⚠️ 手势库加载失败');
-         return;
-       }
-       hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-       hands.setOptions({
-         maxNumHands: 1,
-         modelComplexity: isMobile ? 0 : 1,
-         minDetectionConfidence: 0.65,
-         minTrackingConfidence: 0.5
-       });
-       hands.onResults(onHandsResults);
-     }
-     function onHandsResults(results) {
-       if (isProcessing) return;
-       if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-         setStatus('✋ 请伸出手');
-         resetFist();
-         return;
-       }
-       const landmarks = results.multiHandLandmarks[0];
-       const wrist = landmarks[0];
-       const tipIndices = [4, 8, 12, 16, 20];
-       let foldedCount = 0;
-       for (let idx of tipIndices) {
-         const dx = landmarks[idx].x - wrist.x;
-         const dy = landmarks[idx].y - wrist.y;
-         const dist = Math.sqrt(dx * dx + dy * dy);
-         if (dist < 0.13) foldedCount++;
-       }
-       const isFistNow = (foldedCount >= 4);
-       if (isFistNow) {
-         setStatus('🤛 握拳中...');
-         if (!isFist) {
-           isFist = true;
-           fistStartTime = Date.now();
-         } else {
-           const duration = (Date.now() - fistStartTime) / 1000;
-           fistBar.style.width = Math.min((duration / 3) * 100, 100) + '%';
-           if (duration >= 3 && !isProcessing) {
-             pickCard();
-             resetFist();
-           }
-         }
-       } else {
-         setStatus('🖐 张开手');
-         resetFist();
-       }
-     }
-     function resetFist() {
-       isFist = false;
-       fistStartTime = 0;
-       fistBar.style.width = '0%';
-     }
-     function pickCard() {
-       if (isProcessing) return;
-       isProcessing = true;
-       currentCard = TAROT_CARDS[Math.floor(Math.random() * TAROT_CARDS.length)];
-       showCardBack();
-       cardNameEl.textContent = `🃏 ${currentCard.name}`;
-       cardMeaningEl.textContent = '🔮 AI 解读中...';
-       cardMeaningEl.className = 'card-meaning loading-dots';
-       hintEl.textContent = '⏳ 星象正在低语';
-       setStatus('🧙 召唤中...');
-       callGemini(currentCard);
-     }
-     function showCardBack() {
-       cardDisplay.classList.add('show');
-       cardDisplay.classList.remove('flipped');
-     }
-     function revealCard() {
-       arcanaSymbol.textContent = currentCard.symbol;
-       arcanaName.textContent = currentCard.name;
-       cardDisplay.classList.add('flipped');
-     }
-     async function callGemini(card) {
-       if (!GEMINI_API_KEY || GEMINI_API_KEY.length < 10) {
-         useFallback(card);
-         return;
-       }
-       try {
-         const prompt = `你是一位资深的塔罗牌解读师。请用简洁、深刻、口语化的方式解读塔罗牌"${card.name}"。要求：1. 总共不超过60个字；2. 直接给出核心启示，不要说"这张牌代表..."；3. 语气像朋友聊天一样自然。`;
-         const response = await fetch(
-           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-           {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({
-               contents: [{ parts: [{ text: prompt }] }],
-               generationConfig: { temperature: 0.8, maxOutputTokens: 100 }
-             })
-           }
-         );
-         if (!response.ok) {
-           const err = await response.text();
-           throw new Error(`API错误 ${response.status}: ${err}`);
-         }
-         const data = await response.json();
-         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || card.meaning;
-         showResult(text, '✨ 已解读', '继续握拳抽下一张');
-       } catch (error) {
-         console.error('Gemini调用失败:', error);
-         useFallback(card);
-       } finally {
-         isProcessing = false;
-       }
-     }
-     function useFallback(card) {
-       showResult(card.meaning, '📡 离线解读', '继续握拳抽下一张（离线模式）');
-       isProcessing = false;
-     }
-     function showResult(text, status, hint) {
-       cardMeaningEl.textContent = text;
-       cardMeaningEl.className = 'card-meaning';
-       hintEl.textContent = `🤛 ${hint}`;
-       setStatus(status);
-       revealCard();
-     }
-     async function loop() {
-       if (video.readyState >= 2 && hands) {
-         frameCount++;
-         const skipRate = isMobile ? 2 : 1;
-         if (frameCount % skipRate === 0) {
-           try { await hands.send({ image: video }); } catch (e) {}
-         }
-       }
-       requestAnimationFrame(loop);
-     }
-     async function init() {
-       initHands();
-       const ok = await startCamera();
-       if (ok) {
-         loop();
-         if (isIPad && !localStorage.getItem('tarot_ipad_note_dismissed')) {
-           ipadNote.classList.add('show');
-         }
-       }
-     }
-     document.getElementById('drawBtn').addEventListener('click', pickCard);
-     document.getElementById('toggleCamBtn').addEventListener('click', startCamera);
-     document.getElementById('apiBtn').addEventListener('click', () => {
-       apiKeyInput.value = GEMINI_API_KEY;
-       apiPanel.classList.add('show');
-       veil.classList.add('show');
-     });
-     document.getElementById('saveKeyBtn').addEventListener('click', () => {
-       GEMINI_API_KEY = apiKeyInput.value.trim();
-       localStorage.setItem('tarot_gemini_key', GEMINI_API_KEY);
-       apiPanel.classList.remove('show');
-       veil.classList.remove('show');
-       setStatus(GEMINI_API_KEY ? '🔑 API Key 已保存' : '✅ 摄像头已就绪');
-     });
-     document.getElementById('closePanelBtn').addEventListener('click', () => {
-       apiPanel.classList.remove('show');
-       veil.classList.remove('show');
-     });
-     document.getElementById('dismissNoteBtn').addEventListener('click', () => {
-       ipadNote.classList.remove('show');
-       localStorage.setItem('tarot_ipad_note_dismissed', '1');
-     });
-     init();
-   </script>
- </body>
- </html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Mystic Vision Tarot · 灵启万物</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" crossorigin="anonymous"></script>
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-light: #f0d68a;
+  --gold-dark: #8a6e2f;
+  --deep: #050508;
+  --navy: #0b1026;
+  --navy-light: #141b35;
+  --cream: #f0e6d3;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  background: radial-gradient(ellipse at center, #161b35 0%, #0a0d1a 50%, #050508 100%);
+  color: var(--cream);
+  font-family: 'Noto Serif SC', 'Cormorant Garamond', serif;
+  overflow: hidden;
+}
+.stars {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, rgba(240,214,138,.8), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,.7), transparent),
+    radial-gradient(2px 2px at 160px 120px, rgba(240,214,138,.5), transparent),
+    radial-gradient(1px 1px at 230px 80px, rgba(255,255,255,.6), transparent),
+    radial-gradient(2px 2px at 300px 160px, rgba(240,214,138,.5), transparent),
+    radial-gradient(1px 1px at 400px 50px, rgba(255,255,255,.7), transparent),
+    radial-gradient(2px 2px at 500px 140px, rgba(240,214,138,.6), transparent);
+  background-size: 520px 220px;
+  opacity: .3;
+  animation: twinkle 8s ease-in-out infinite alternate;
+}
+@keyframes twinkle { from { opacity: .2; } to { opacity: .45; } }
+.fog {
+  position: fixed; border-radius: 50%; filter: blur(100px); opacity: .12;
+  pointer-events: none; z-index: 0;
+}
+.fog1 {
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, #2a1b5a 0%, transparent 70%);
+  top: -200px; left: -200px;
+  animation: drift 30s infinite alternate;
+}
+.fog2 {
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, #1a1340 0%, transparent 70%);
+  bottom: -150px; right: -150px;
+  animation: drift 25s infinite alternate-reverse;
+}
+@keyframes drift { from { transform: translate(-10%, -10%) scale(1); } to { transform: translate(10%, 10%) scale(1.3); } }
+.hidden { display: none !important; }
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; padding: 20px; text-align: center; }
+.intro h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(40px, 9vw, 84px);
+  color: var(--gold-light);
+  letter-spacing: .25em;
+  text-shadow: 0 0 35px rgba(212,175,55,.5);
+}
+.intro .subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(18px, 4vw, 28px);
+  color: var(--gold);
+  letter-spacing: .35em;
+  text-transform: uppercase;
+  margin-top: 8px;
+  opacity: .8;
+}
+.separator { width: 180px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 26px 0; }
+.intro label {
+  font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold-dark);
+  letter-spacing: .35em; text-transform: uppercase; margin-bottom: 14px;
+}
+.intro textarea {
+  width: min(560px, 90vw); height: 120px;
+  background: rgba(5,5,8,.55);
+  border: 1px solid rgba(212,175,55,.35);
+  border-radius: 24px; padding: 20px; color: var(--cream);
+  font-family: inherit; font-size: 18px; text-align: center;
+  outline: none; resize: none;
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 0 30px rgba(0,0,0,.4);
+}
+.intro textarea::placeholder { color: rgba(240,230,211,.25); }
+.intro textarea:focus { border-color: rgba(212,175,55,.65); }
+.ascend {
+  margin-top: 28px; padding: 18px 64px; border-radius: 50px; border: none;
+  background: linear-gradient(135deg, #9a7b2c, #5c4618); color: #fff;
+  font-family: 'Cinzel', serif; font-size: 18px; letter-spacing: .35em;
+  cursor: pointer; transition: all .35s;
+  box-shadow: 0 0 25px rgba(212,175,55,.2);
+}
+.ascend:disabled { opacity: .4; cursor: not-allowed; filter: grayscale(.6); }
+.ascend:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 0 45px rgba(212,175,55,.45); }
+.init-status { margin-top: 16px; font-size: 12px; color: var(--gold-dark); letter-spacing: .15em; }
+.stage { padding: 0; }
+.topbar {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px; background: rgba(5,5,8,.45);
+  border-bottom: 1px solid rgba(212,175,55,.15);
+  backdrop-filter: blur(8px);
+}
+.title-small { font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold); letter-spacing: .25em; }
+.status { font-size: 13px; color: var(--gold-light); letter-spacing: .05em; }
+.main { flex: 1; display: flex; width: 100%; height: calc(100% - 56px); position: relative; }
+.camera-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; padding: 16px; position: relative; min-width: 0;
+}
+.video-frame {
+  position: relative; width: min(680px, 94vw); aspect-ratio: 4 / 3;
+  border-radius: 24px; overflow: hidden;
+  border: 2px solid rgba(212,175,55,.55);
+  box-shadow: 0 0 0 1px rgba(212,175,55,.15), 0 0 60px rgba(212,175,55,.15), inset 0 0 80px rgba(0,0,0,.55);
+  background: #08080c;
+}
+video { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
+.video-overlay { position: absolute; inset: 0; pointer-events: none; }
+.corner { position: absolute; width: 56px; height: 56px; border: 2px solid var(--gold); }
+.corner.tl { top: 12px; left: 12px; border-right: none; border-bottom: none; border-top-left-radius: 14px; }
+.corner.tr { top: 12px; right: 12px; border-left: none; border-bottom: none; border-top-right-radius: 14px; }
+.corner.bl { bottom: 12px; left: 12px; border-right: none; border-top: none; border-bottom-left-radius: 14px; }
+.corner.br { bottom: 12px; right: 12px; border-left: none; border-top: none; border-bottom-right-radius: 14px; }
+.fan {
+  position: absolute; top: 50%; left: 50%; width: min(760px, 96%); height: 320px;
+  transform: translate(-50%, -50%); perspective: 1200px;
+  pointer-events: none; z-index: 5;
+}
+.card {
+  position: absolute; left: 50%; top: 50%; width: 140px; height: 220px;
+  margin-left: -70px; margin-top: -110px;
+  transform-style: preserve-3d;
+  transition: transform .6s cubic-bezier(.22,1,.36,1), opacity .4s;
+  border-radius: 16px; box-shadow: 0 14px 45px rgba(0,0,0,.55);
+}
+.card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform .9s cubic-bezier(.22,1,.36,1); }
+.card.flipped .card-inner { transform: rotateY(180deg); }
+.face {
+  position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border-radius: 16px; overflow: hidden;
+  border: 2px solid rgba(212,175,55,.65);
+  box-shadow: 0 12px 40px rgba(0,0,0,.55);
+}
+.back { background: url('card-back.png') center/cover no-repeat; }
+.front {
+  background: linear-gradient(160deg, #1a1f3a 0%, #0b1026 100%);
+  transform: rotateY(180deg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 14px; text-align: center;
+}
+.front::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 30%, var(--card-glow, rgba(212,175,55,.12)), transparent 70%);
+  pointer-events: none;
+}
+.card-symbol { font-size: 52px; margin-bottom: 8px; filter: drop-shadow(0 0 8px rgba(212,175,55,.5)); line-height: 1; }
+.card-name { font-family: 'Cinzel', serif; font-size: 17px; color: var(--gold-light); letter-spacing: .12em; margin-bottom: 6px; }
+.card-meaning { font-size: 12px; color: var(--cream); opacity: .85; line-height: 1.45; max-height: 70px; overflow: hidden; }
+.card.active .face { border-color: rgba(240,214,138,.9); box-shadow: 0 0 30px rgba(212,175,55,.35); }
+.card.active { filter: brightness(1.15); }
+.gesture-hints {
+  display: flex; gap: clamp(24px, 8vw, 70px); margin-top: 4px;
+  color: var(--gold-dark); font-family: 'Cinzel', serif; font-size: 10px;
+  letter-spacing: .15em; text-transform: uppercase; opacity: .75;
+}
+.hint { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.hint span { font-size: 22px; color: var(--gold); animation: bounce 2s infinite; }
+.hint:nth-child(1) span { animation-delay: 0s; }
+.hint:nth-child(3) span { animation-delay: 1s; }
+.fist-icon { width: 18px; height: 18px; border: 2px solid var(--gold); border-radius: 50%; position: relative; }
+.fist-icon::after { content: ''; position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px; background: var(--gold); border-radius: 50%; animation: pulse 1.5s infinite; }
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(2); } }
+.controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; z-index: 6; }
+.controls button {
+  background: linear-gradient(135deg, rgba(212,175,55,.18), rgba(212,175,55,.08));
+  border: 1px solid rgba(212,175,55,.6); color: var(--gold-light);
+  padding: 12px 20px; border-radius: 30px; cursor: pointer;
+  font-family: inherit; font-size: 14px; letter-spacing: .06em;
+  transition: all .25s; backdrop-filter: blur(4px);
+  touch-action: manipulation; min-width: 90px;
+}
+.controls button:active { transform: scale(.96); }
+.controls button:hover { background: linear-gradient(135deg, rgba(212,175,55,.32), rgba(212,175,55,.12)); box-shadow: 0 0 18px rgba(212,175,55,.25); }
+.chat-panel {
+  position: absolute; right: 0; top: 0; bottom: 0; width: min(440px, 100%);
+  background: rgba(5,5,8,.92); border-left: 1px solid rgba(212,175,55,.2);
+  display: flex; flex-direction: column; backdrop-filter: blur(20px);
+  z-index: 10; transition: transform .5s ease;
+  transform: translateX(100%);
+}
+.chat-panel.open { transform: translateX(0); }
+.chat-header {
+  padding: 16px 20px; border-bottom: 1px solid rgba(212,175,55,.15);
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold);
+  letter-spacing: .2em; text-transform: uppercase;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); animation: pulse-dot 1.5s infinite; }
+@keyframes pulse-dot { 0% { opacity: 1; } 50% { opacity: .4; } 100% { opacity: 1; } }
+.chat-messages { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.message { max-width: 90%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.65; }
+.message.user { align-self: flex-end; background: rgba(90,60,20,.55); border: 1px solid rgba(212,175,55,.25); color: var(--cream); }
+.message.assistant { align-self: flex-start; background: rgba(20,20,35,.55); border: 1px solid rgba(212,175,55,.15); color: #e5e7eb; }
+.message.assistant h1, .message.assistant h2, .message.assistant h3 { color: var(--gold); font-family: 'Cinzel', serif; font-size: 15px; margin: .8em 0 .3em; }
+.message.assistant strong { color: var(--gold-light); }
+.message.assistant p { margin: .4em 0; }
+.thinking { display: flex; gap: 6px; padding: 12px 16px; }
+.thinking span { width: 7px; height: 7px; background: var(--gold); border-radius: 50%; animation: think .8s infinite; }
+.thinking span:nth-child(2) { animation-delay: .15s; }
+.thinking span:nth-child(3) { animation-delay: .3s; }
+@keyframes think { 0%,100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
+.chat-form { padding: 14px; display: flex; gap: 10px; border-top: 1px solid rgba(212,175,55,.15); }
+.chat-form input {
+  flex: 1; background: rgba(0,0,0,.45); border: 1px solid rgba(212,175,55,.25);
+  border-radius: 24px; padding: 12px 18px; color: var(--cream);
+  font-family: inherit; font-size: 15px; outline: none;
+}
+.chat-form input:focus { border-color: rgba(212,175,55,.55); }
+.chat-form button {
+  width: 44px; height: 44px; border-radius: 50%; border: none;
+  background: linear-gradient(135deg, #9a7b2c, #5c4618); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer; transition: transform .2s;
+}
+.chat-form button:active { transform: scale(.92); }
+.veil { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 20; }
+.api-panel {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: rgba(11,16,38,.96); border: 1px solid var(--gold);
+  border-radius: 18px; padding: 24px; width: min(380px, 90vw);
+  z-index: 21; box-shadow: 0 0 60px rgba(0,0,0,.7);
+}
+.api-panel h3 { color: var(--gold-light); margin-bottom: 10px; font-family: 'Cinzel', serif; }
+.api-panel p { font-size: 12px; color: var(--gold-dark); margin-bottom: 14px; line-height: 1.5; }
+.api-panel select {
+  width: 100%; padding: 11px 14px; border-radius: 8px;
+  border: 1px solid var(--gold-dark); background: rgba(0,0,0,.4);
+  color: var(--cream); margin-bottom: 12px; font-family: inherit; font-size: 15px;
+}
+.api-panel input {
+  width: 100%; padding: 12px 14px; border-radius: 8px;
+  border: 1px solid var(--gold-dark); background: rgba(0,0,0,.4);
+  color: var(--cream); margin-bottom: 16px; font-family: inherit; font-size: 15px;
+}
+.panel-btns { display: flex; gap: 12px; justify-content: flex-end; }
+.panel-btns button {
+  padding: 10px 18px; border-radius: 20px;
+  border: 1px solid rgba(212,175,55,.5); background: rgba(212,175,55,.12);
+  color: var(--gold-light); font-family: inherit; cursor: pointer;
+}
+.panel-btns button:first-child { background: linear-gradient(135deg, #9a7b2c, #5c4618); color: #fff; border: none; }
+@media (max-width: 768px) {
+  .topbar { padding: 12px 16px; }
+  .main { flex-direction: column; height: calc(100% - 50px); }
+  .video-frame { width: 100%; max-width: 100%; }
+  .fan { height: 260px; }
+  .card { width: 110px; height: 176px; margin-left: -55px; margin-top: -88px; }
+  .card-symbol { font-size: 40px; }
+  .card-name { font-size: 14px; }
+  .chat-panel { position: fixed; inset: auto 0 0 0; height: 55vh; border-left: none; border-top: 1px solid rgba(212,175,55,.2); border-radius: 20px 20px 0 0; transform: translateY(110%); }
+  .chat-panel.open { transform: translateY(0); }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .main { flex-direction: row; }
+  .video-frame { max-width: 52vw; }
+  .fan { height: 240px; }
+  .chat-panel { height: 100%; width: 45vw; }
+}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="fog fog1"></div>
+<div class="fog fog2"></div>
+
+<div id="intro" class="screen intro">
+  <h1>MYSTIC VISION</h1>
+  <p class="subtitle">灵启万物 · 手势塔罗</p>
+  <div class="separator"></div>
+  <label>镌刻你的困惑</label>
+  <textarea id="question" placeholder="例如：我近期的事业发展如何？"></textarea>
+  <button id="ascendBtn" class="ascend" disabled>ASCEND</button>
+  <div id="initStatus" class="init-status">正在引导星界之力...</div>
+</div>
+
+<div id="stage" class="screen stage hidden">
+  <div class="topbar">
+    <div class="title-small">MYSTIC VISION</div>
+    <div id="status" class="status">请允许摄像头权限</div>
+  </div>
+  <div class="main">
+    <div class="camera-col">
+      <div class="video-frame">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="video-overlay">
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+        </div>
+        <div id="fan" class="fan"></div>
+      </div>
+      <div class="gesture-hints" id="hints">
+        <div class="hint"><span>&#8592;</span><div>挥手左/右</div></div>
+        <div class="hint"><div class="fist-icon"></div><div>握拳3秒翻牌</div></div>
+        <div class="hint"><span>&#8594;</span><div>浏览牌组</div></div>
+      </div>
+      <div class="controls">
+        <button id="prevBtn">&#8592; 上一张</button>
+        <button id="flipBtn">翻牌</button>
+        <button id="nextBtn">下一张 &#8594;</button>
+        <button id="resetBtn" class="hidden">重新占卜</button>
+        <button id="apiBtn">设置 AI Key</button>
+      </div>
+    </div>
+    <div id="chatPanel" class="chat-panel">
+      <div class="chat-header"><div class="dot"></div><span>Mystic Mentor</span></div>
+      <div id="chatMessages" class="chat-messages"></div>
+      <form id="chatForm" class="chat-form">
+        <input id="chatInput" placeholder="继续追问细节..." autocomplete="off">
+        <button type="submit" id="sendBtn">&#10148;</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="veil" class="veil hidden"></div>
+<div id="apiPanel" class="api-panel hidden">
+  <h3>设置 AI 密钥</h3>
+  <p>密钥仅保存在本机浏览器中，不会上传。</p>
+  <select id="apiProvider">
+    <option value="gemini">Gemini (Google)</option>
+    <option value="deepseek">DeepSeek</option>
+  </select>
+  <input id="apiKeyInput" type="text" placeholder="输入 API Key">
+  <div class="panel-btns">
+    <button id="saveApiBtn">保存</button>
+    <button id="closeApiBtn">取消</button>
+  </div>
+</div>
+
+<script>
+(function() {
+const TAROT_CARDS = [
+  { id: 0, nameZh: '愚者', nameEn: 'The Fool', symbol: '✨', meaning: '自由、自发、纯真、崭新的开始', glow: 'rgba(212,175,55,.18)' },
+  { id: 1, nameZh: '魔术师', nameEn: 'The Magician', symbol: '🎩', meaning: '力量、技艺、专注、行动、意志力', glow: 'rgba(155,89,182,.18)' },
+  { id: 2, nameZh: '女祭司', nameEn: 'The High Priestess', symbol: '🌙', meaning: '直觉、神秘、潜意识、深处的智慧', glow: 'rgba(52,152,219,.18)' },
+  { id: 3, nameZh: '皇后', nameEn: 'The Empress', symbol: '👑', meaning: '丰饶、生命力、自然、感官享受', glow: 'rgba(46,204,113,.18)' },
+  { id: 4, nameZh: '皇帝', nameEn: 'The Emperor', symbol: '⚜️', meaning: '权威、结构、领导力、父亲般的形象', glow: 'rgba(192,57,43,.18)' },
+  { id: 5, nameZh: '教皇', nameEn: 'The Hierophant', symbol: '📿', meaning: '传统、信仰、精神指引、道路、仪式', glow: 'rgba(241,196,15,.18)' },
+  { id: 6, nameZh: '恋人', nameEn: 'The Lovers', symbol: '💕', meaning: '爱、和谐、关系、价值观的选择', glow: 'rgba(233,30,99,.18)' },
+  { id: 7, nameZh: '战车', nameEn: 'The Chariot', symbol: '🏇', meaning: '意志力强、胜利、决心、自律、控制力', glow: 'rgba(127,140,141,.18)' },
+  { id: 8, nameZh: '力量', nameEn: 'Strength', symbol: '🦁', meaning: '勇气、耐性、控制本能、内在的平衡', glow: 'rgba(230,126,34,.18)' },
+  { id: 9, nameZh: '隐士', nameEn: 'The Hermit', symbol: '🕯️', meaning: '内省、孤独、寻求真理、精神引导', glow: 'rgba(52,73,94,.18)' },
+  { id: 10, nameZh: '命运之轮', nameEn: 'Wheel of Fortune', symbol: '☸️', meaning: '变迁、周期、必然、突如其来的机会', glow: 'rgba(142,68,173,.18)' },
+  { id: 11, nameZh: '正义', nameEn: 'Justice', symbol: '⚖️', meaning: '平衡、公平、责任、因果报应', glow: 'rgba(41,128,185,.18)' },
+  { id: 12, nameZh: '倒吊人', nameEn: 'The Hanged Man', symbol: '🙃', meaning: '牺牲、停滞、新视角、放手、等待', glow: 'rgba(22,160,133,.18)' },
+  { id: 13, nameZh: '死神', nameEn: 'Death', symbol: '💀', meaning: '终结、转变、清除旧物、新生的开始', glow: 'rgba(44,62,80,.2)' },
+  { id: 14, nameZh: '节制', nameEn: 'Temperance', symbol: '🍶', meaning: '平衡、融合、耐心、适度、疗愈', glow: 'rgba(26,188,156,.18)' },
+  { id: 15, nameZh: '恶魔', nameEn: 'The Devil', symbol: '😈', meaning: '诱惑、束缚、物质主义、成瘾、幻觉', glow: 'rgba(142,68,173,.2)' },
+  { id: 16, nameZh: '高塔', nameEn: 'The Tower', symbol: '🗼', meaning: '突变、觉醒、破坏、剧烈的转变', glow: 'rgba(192,57,43,.2)' },
+  { id: 17, nameZh: '星星', nameEn: 'The Star', symbol: '⭐', meaning: '希望、灵感、宁静、疗愈、对未来的憧憬', glow: 'rgba(243,156,18,.18)' },
+  { id: 18, nameZh: '月亮', nameEn: 'The Moon', symbol: '🌑', meaning: '不安、幻象、潜意识、隐藏的事实', glow: 'rgba(93,109,126,.18)' },
+  { id: 19, nameZh: '太阳', nameEn: 'The Sun', symbol: '☀️', meaning: '成功、喜悦、活力、明朗、真理', glow: 'rgba(241,196,15,.2)' },
+  { id: 20, nameZh: '审判', nameEn: 'Judgement', symbol: '🎺', meaning: '重生、呼唤、解脱、自我评价', glow: 'rgba(212,175,55,.2)' },
+  { id: 21, nameZh: '世界', nameEn: 'The World', symbol: '🌍', meaning: '完成、整合、成就、旅程的终点', glow: 'rgba(39,174,96,.18)' }
+];
+
+const isMobile = /iPad|iPhone|iPod|Android|Mobile/i.test(navigator.userAgent);
+let hands = null, camera = null, modelReady = false;
+let activeIndex = Math.floor(TAROT_CARDS.length / 2);
+let isStarted = false, isFlipped = false, isAIThinking = false;
+let lastHandX = null, lastStableX = null, fistStart = null, lastFistTime = null;
+let apiProvider = 'gemini', apiKey = '';
+let chatHistory = [], currentCard = null, userQuestion = '', activeMsgEl = null;
+const FIST_HOLD = 3000, FIST_LOSS = 1200, SWIPE_THRESH = 0.045;
+
+const video = document.getElementById('video');
+const fan = document.getElementById('fan');
+const statusEl = document.getElementById('status');
+const intro = document.getElementById('intro');
+const stage = document.getElementById('stage');
+const ascendBtn = document.getElementById('ascendBtn');
+const initStatus = document.getElementById('initStatus');
+const chatPanel = document.getElementById('chatPanel');
+const chatMessages = document.getElementById('chatMessages');
+const chatForm = document.getElementById('chatForm');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+const apiPanel = document.getElementById('apiPanel');
+const veil = document.getElementById('veil');
+const apiProviderSel = document.getElementById('apiProvider');
+const apiKeyInput = document.getElementById('apiKeyInput');
+
+const md = (typeof marked !== 'undefined') ? (t => marked.parse(t)) : (t => t.replace(/\n/g, '<br>'));
+
+function setStatus(text) { statusEl.textContent = text; }
+
+function loadSettings() {
+  apiProvider = localStorage.getItem('tarot_api_provider') || 'gemini';
+  apiKey = localStorage.getItem('tarot_api_key') || '';
+  apiProviderSel.value = apiProvider;
+}
+function saveSettings() {
+  localStorage.setItem('tarot_api_provider', apiProvider);
+  localStorage.setItem('tarot_api_key', apiKey);
+}
+
+function initHands() {
+  if (typeof Hands === 'undefined') {
+    initStatus.textContent = '手势库加载失败，请刷新';
+    return;
+  }
+  hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+  hands.setOptions({
+    maxNumHands: 1,
+    modelComplexity: isMobile ? 0 : 1,
+    minDetectionConfidence: 0.65,
+    minTrackingConfidence: 0.55
+  });
+  hands.onResults(onResults);
+  modelReady = true;
+  initStatus.textContent = '星界之力已就绪';
+  ascendBtn.disabled = false;
+}
+
+async function startDivination() {
+  userQuestion = document.getElementById('question').value.trim();
+  if (!userQuestion) { alert('请先镌刻你的困惑'); return; }
+  if (!modelReady) return;
+  try {
+    const win = window;
+    camera = new win.Camera(video, {
+      onFrame: async () => { if (hands && video) await hands.send({ image: video }); },
+      width: 640, height: 480
+    });
+    await camera.start();
+    intro.classList.add('hidden');
+    stage.classList.remove('hidden');
+    isStarted = true;
+    renderFan();
+    setStatus('挥动左手或右手浏览牌组，握拳3秒翻牌');
+  } catch (err) {
+    console.error(err);
+    setStatus('摄像头权限被拒绝，请刷新重试');
+  }
+}
+
+function checkIsFist(landmarks) {
+  const tips = [8, 12, 16, 20];
+  const pips = [6, 10, 14, 18];
+  const wrist = landmarks[0];
+  let curled = 0;
+  for (let i = 0; i < tips.length; i++) {
+    const tip = landmarks[tips[i]], pip = landmarks[pips[i]];
+    const tipDist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
+    const pipDist = Math.hypot(pip.x - wrist.x, pip.y - wrist.y);
+    if (tipDist < pipDist) curled++;
+  }
+  return curled >= 3;
+}
+
+function onResults(results) {
+  if (!isStarted || isFlipped) return;
+  const now = Date.now();
+  const hasHand = results.multiHandLandmarks && results.multiHandLandmarks.length > 0;
+  if (hasHand) {
+    const hand = results.multiHandLandmarks[0];
+    const x = hand[0].x;
+    const fist = checkIsFist(hand);
+    if (fist) {
+      lastFistTime = now;
+      if (!fistStart) fistStart = now;
+      const elapsed = now - fistStart;
+      setStatus(`握拳中 ${(elapsed / 1000).toFixed(1)}s / 3.0s`);
+      if (elapsed >= FIST_HOLD) executeFlip();
+    } else {
+      const since = lastFistTime ? now - lastFistTime : Infinity;
+      if (since > FIST_LOSS) {
+        fistStart = null; lastFistTime = null;
+        if (lastStableX !== null) {
+          const dx = x - lastStableX;
+          if (Math.abs(dx) > SWIPE_THRESH) {
+            const dir = dx > 0 ? 1 : -1;
+            activeIndex = (activeIndex + dir + TAROT_CARDS.length) % TAROT_CARDS.length;
+            lastStableX = x;
+            renderFan();
+            setStatus('浏览牌组');
+          }
+        } else { lastStableX = x; }
+      }
+    }
+    lastHandX = x;
+  } else {
+    const since = lastFistTime ? now - lastFistTime : Infinity;
+    if (since > FIST_LOSS) { fistStart = null; lastFistTime = null; lastHandX = null; lastStableX = null; }
+  }
+}
+
+function renderFan() {
+  fan.innerHTML = '';
+  const N = TAROT_CARDS.length;
+  const maxOffset = 6;
+  for (let i = 0; i < N; i++) {
+    let offset = i - activeIndex;
+    if (offset > N / 2) offset -= N;
+    if (offset < -N / 2) offset += N;
+    if (Math.abs(offset) > maxOffset) continue;
+    const card = TAROT_CARDS[i];
+    const el = document.createElement('div');
+    const isActive = i === activeIndex;
+    el.className = 'card' + (isActive ? ' active' : '') + (isFlipped && isActive ? ' flipped' : '');
+    const rot = offset * 9;
+    const tx = offset * 62;
+    const tz = (1 - Math.abs(offset) / maxOffset) * 80;
+    const scale = Math.max(0.55, 0.95 - Math.abs(offset) * 0.07) * (isActive ? 1.12 : 1);
+    const z = 60 - Math.abs(offset);
+    const opacity = Math.max(0.25, 1 - Math.abs(offset) * 0.18);
+    el.style.transform = `translate(-50%, -50%) translateX(${tx}px) translateZ(${tz}px) rotate(${rot}deg) scale(${scale})`;
+    el.style.zIndex = z;
+    el.style.opacity = opacity;
+    el.style.setProperty('--card-glow', card.glow || 'rgba(212,175,55,.12)');
+    el.innerHTML = `
+      <div class="card-inner">
+        <div class="face back"></div>
+        <div class="face front">
+          <div class="card-symbol">${card.symbol}</div>
+          <div class="card-name">${card.nameZh}</div>
+          <div class="card-meaning">${card.meaning}</div>
+        </div>
+      </div>`;
+    if (!isFlipped) {
+      el.style.pointerEvents = 'auto';
+      el.addEventListener('click', () => { activeIndex = i; renderFan(); });
+    }
+    fan.appendChild(el);
+  }
+}
+
+function executeFlip() {
+  if (isFlipped) return;
+  isFlipped = true;
+  currentCard = TAROT_CARDS[activeIndex];
+  renderFan();
+  setStatus('星象已现 · 命运归位');
+  chatPanel.classList.add('open');
+  document.getElementById('hints').classList.add('hidden');
+  document.getElementById('flipBtn').classList.add('hidden');
+  document.getElementById('prevBtn').classList.add('hidden');
+  document.getElementById('nextBtn').classList.add('hidden');
+  document.getElementById('resetBtn').classList.remove('hidden');
+  initialReading();
+}
+
+function initialReading() {
+  chatMessages.innerHTML = '';
+  chatHistory = [];
+  const question = userQuestion || '寻求命运的综合指引';
+  const prompt = `【占卜启动】用户提出的问题是："${question}"。抽中的塔罗牌是：${currentCard.nameZh}（${currentCard.nameEn}）。牌面基础含义：${currentCard.meaning}。
+请你作为 Mystic Vision 导师，针对用户的【具体问题】给出深度的塔罗分析。结合牌面背后的象征意义，指出目前问题的核心、可能的障碍以及未来的启示。请保持专业、神秘且充满智慧的语调。使用 Markdown 格式（标题、加粗、列表）增强可读性。`;
+  chatHistory.push({ role: 'user', content: prompt });
+  addAssistantMsg();
+  streamAI();
+}
+
+function appendUserMsg(text) {
+  const div = document.createElement('div');
+  div.className = 'message user';
+  div.textContent = text;
+  chatMessages.appendChild(div);
+  scrollChat();
+}
+
+function addAssistantMsg() {
+  activeMsgEl = document.createElement('div');
+  activeMsgEl.className = 'message assistant';
+  activeMsgEl.innerHTML = '<div class="thinking"><span></span><span></span><span></span></div>';
+  chatMessages.appendChild(activeMsgEl);
+  scrollChat();
+}
+
+function scrollChat() { chatMessages.scrollTop = chatMessages.scrollHeight; }
+
+function updateMsg(el, text) {
+  if (!el) return;
+  el.innerHTML = md(text);
+  scrollChat();
+}
+
+async function streamAI() {
+  isAIThinking = true;
+  sendBtn.disabled = true;
+  let full = '';
+  try {
+    if (!apiKey) throw new Error('nokey');
+    const stream = apiProvider === 'gemini' ? geminiStream() : deepseekStream();
+    for await (const chunk of stream) {
+      full += chunk;
+      updateMsg(activeMsgEl, full);
+    }
+  } catch (err) {
+    console.error(err);
+    if (!apiKey || err.message === 'nokey') {
+      full = `✨ 离线解读\n\n你抽到了 **${currentCard.nameZh}**（${currentCard.nameEn}）。\n\n${currentCard.meaning}\n\n请在「设置 AI Key」中填入 Gemini 或 DeepSeek Key，即可获得 AI 导师的深度流式解读。`;
+    } else {
+      full = `✨ 解读服务暂不可用：${err.message}\n\n你抽到了 **${currentCard.nameZh}**（${currentCard.nameEn}）。\n\n${currentCard.meaning}`;
+    }
+    updateMsg(activeMsgEl, full);
+  } finally {
+    isAIThinking = false;
+    sendBtn.disabled = false;
+    chatHistory.push({ role: 'assistant', content: full });
+    activeMsgEl = null;
+  }
+}
+
+async function* geminiStream() {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?key=${apiKey}&alt=sse`;
+  const contents = chatHistory.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents, generationConfig: { temperature: 0.8, maxOutputTokens: 2048 } })
+  });
+  if (!resp.ok) { const txt = await resp.text(); throw new Error(`${resp.status}: ${txt}`); }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') continue;
+      try {
+        const obj = JSON.parse(data);
+        const text = obj.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (text) yield text;
+      } catch (e) {}
+    }
+  }
+}
+
+async function* deepseekStream() {
+  const url = 'https://api.deepseek.com/v1/chat/completions';
+  const messages = [{ role: 'system', content: "你是资深塔罗占卜导师 Mystic Vision。请根据抽出的牌面含义和用户占卜场景，提供充满智慧、神秘感且富有同理心的解读。使用 Markdown 格式输出。" }];
+  for (const m of chatHistory) messages.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content });
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'deepseek-chat', messages, stream: true, temperature: 0.8, max_tokens: 2048 })
+  });
+  if (!resp.ok) { const txt = await resp.text(); throw new Error(`${resp.status}: ${txt}`); }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') continue;
+      try {
+        const obj = JSON.parse(data);
+        const text = obj.choices?.[0]?.delta?.content || '';
+        if (text) yield text;
+      } catch (e) {}
+    }
+  }
+}
+
+function resetAll() {
+  isFlipped = false;
+  activeIndex = Math.floor(TAROT_CARDS.length / 2);
+  chatPanel.classList.remove('open');
+  chatMessages.innerHTML = '';
+  chatHistory = [];
+  document.getElementById('hints').classList.remove('hidden');
+  document.getElementById('flipBtn').classList.remove('hidden');
+  document.getElementById('prevBtn').classList.remove('hidden');
+  document.getElementById('nextBtn').classList.remove('hidden');
+  document.getElementById('resetBtn').classList.add('hidden');
+  renderFan();
+  setStatus('挥动左手或右手浏览牌组，握拳3秒翻牌');
+}
+
+document.getElementById('ascendBtn').addEventListener('click', startDivination);
+document.getElementById('prevBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex - 1 + TAROT_CARDS.length) % TAROT_CARDS.length; renderFan(); });
+document.getElementById('nextBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex + 1) % TAROT_CARDS.length; renderFan(); });
+document.getElementById('flipBtn').addEventListener('click', executeFlip);
+document.getElementById('resetBtn').addEventListener('click', resetAll);
+document.getElementById('apiBtn').addEventListener('click', () => {
+  apiKeyInput.value = apiKey;
+  apiPanel.classList.remove('hidden');
+  veil.classList.remove('hidden');
+});
+document.getElementById('saveApiBtn').addEventListener('click', () => {
+  apiProvider = apiProviderSel.value;
+  apiKey = apiKeyInput.value.trim();
+  saveSettings();
+  apiPanel.classList.add('hidden');
+  veil.classList.add('hidden');
+});
+document.getElementById('closeApiBtn').addEventListener('click', () => {
+  apiPanel.classList.add('hidden');
+  veil.classList.add('hidden');
+});
+chatForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!isFlipped || isAIThinking) return;
+  const text = chatInput.value.trim();
+  if (!text) return;
+  appendUserMsg(text);
+  chatHistory.push({ role: 'user', content: text });
+  chatInput.value = '';
+  addAssistantMsg();
+  streamAI();
+});
+
+loadSettings();
+initHands();
+renderFan();
+})();
+</script>
+</body>
+</html>
