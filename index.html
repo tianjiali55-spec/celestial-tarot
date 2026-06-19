@@ -115,64 +115,76 @@ body {
 }
 .title-small { font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold); letter-spacing: .25em; }
 .status { font-size: 13px; color: var(--gold-light); letter-spacing: .05em; }
+#video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .main { flex: 1; display: flex; width: 100%; height: calc(100% - 56px); position: relative; }
-.camera-col {
+.altar {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 16px; padding: 16px; position: relative; min-width: 0;
+  position: relative; min-width: 0; gap: 18px; padding: 16px;
 }
-.video-frame {
-  position: relative; width: min(680px, 94vw); aspect-ratio: 4 / 3;
-  border-radius: 24px; overflow: hidden;
-  border: 2px solid rgba(212,175,55,.55);
-  box-shadow: 0 0 0 1px rgba(212,175,55,.15), 0 0 60px rgba(212,175,55,.15), inset 0 0 80px rgba(0,0,0,.55);
-  background: #08080c;
+.ritual-ring {
+  position: absolute; top: 50%; left: 50%;
+  width: min(520px, 80vmin); height: min(520px, 80vmin);
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(212,175,55,.2);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(212,175,55,.08), inset 0 0 80px rgba(212,175,55,.06);
+  animation: spin 60s linear infinite;
+  pointer-events: none;
 }
-video { width: 100%; height: 100%; object-fit: cover; display: block; transform: scaleX(-1); }
-.video-overlay { position: absolute; inset: 0; pointer-events: none; }
-.corner { position: absolute; width: 56px; height: 56px; border: 2px solid var(--gold); }
-.corner.tl { top: 12px; left: 12px; border-right: none; border-bottom: none; border-top-left-radius: 14px; }
-.corner.tr { top: 12px; right: 12px; border-left: none; border-bottom: none; border-top-right-radius: 14px; }
-.corner.bl { bottom: 12px; left: 12px; border-right: none; border-top: none; border-bottom-left-radius: 14px; }
-.corner.br { bottom: 12px; right: 12px; border-left: none; border-top: none; border-bottom-right-radius: 14px; }
+.ritual-ring::before {
+  content: ''; position: absolute; inset: 12%;
+  border: 1px dashed rgba(212,175,55,.18); border-radius: 50%;
+}
+.ritual-ring::after {
+  content: ''; position: absolute; inset: 24%;
+  border: 1px solid rgba(212,175,55,.12); border-radius: 50%;
+}
+.altar-glow {
+  position: absolute; top: 50%; left: 50%;
+  width: min(420px, 70vmin); height: min(420px, 70vmin);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(212,175,55,.10) 0%, transparent 70%);
+  pointer-events: none;
+}
+@keyframes spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
 .fan {
-  position: absolute; top: 50%; left: 50%; width: min(760px, 96%); height: 320px;
-  transform: translate(-50%, -50%); perspective: 1200px;
-  pointer-events: none; z-index: 5;
+  position: relative; width: min(900px, 98vw); height: 420px;
+  perspective: 1400px; pointer-events: none; z-index: 5;
 }
 .card {
-  position: absolute; left: 50%; top: 50%; width: 140px; height: 220px;
-  margin-left: -70px; margin-top: -110px;
+  position: absolute; left: 50%; top: 50%; width: 170px; height: 270px;
+  margin-left: -85px; margin-top: -135px;
   transform-style: preserve-3d;
   transition: transform .6s cubic-bezier(.22,1,.36,1), opacity .4s;
-  border-radius: 16px; box-shadow: 0 14px 45px rgba(0,0,0,.55);
+  border-radius: 18px; box-shadow: 0 18px 55px rgba(0,0,0,.6);
 }
 .card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform .9s cubic-bezier(.22,1,.36,1); }
 .card.flipped .card-inner { transform: rotateY(180deg); }
 .face {
   position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
-  border-radius: 16px; overflow: hidden;
+  border-radius: 18px; overflow: hidden;
   border: 2px solid rgba(212,175,55,.65);
-  box-shadow: 0 12px 40px rgba(0,0,0,.55);
+  box-shadow: 0 14px 45px rgba(0,0,0,.55);
 }
 .back { background: url('card-back.png') center/cover no-repeat; }
 .front {
   background: linear-gradient(160deg, #1a1f3a 0%, #0b1026 100%);
   transform: rotateY(180deg);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 14px; text-align: center;
+  padding: 18px; text-align: center;
 }
 .front::before {
   content: ''; position: absolute; inset: 0;
   background: radial-gradient(circle at 50% 30%, var(--card-glow, rgba(212,175,55,.12)), transparent 70%);
   pointer-events: none;
 }
-.card-symbol { font-size: 52px; margin-bottom: 8px; filter: drop-shadow(0 0 8px rgba(212,175,55,.5)); line-height: 1; }
-.card-name { font-family: 'Cinzel', serif; font-size: 17px; color: var(--gold-light); letter-spacing: .12em; margin-bottom: 6px; }
-.card-meaning { font-size: 12px; color: var(--cream); opacity: .85; line-height: 1.45; max-height: 70px; overflow: hidden; }
-.card.active .face { border-color: rgba(240,214,138,.9); box-shadow: 0 0 30px rgba(212,175,55,.35); }
-.card.active { filter: brightness(1.15); }
+.card-symbol { font-size: 62px; margin-bottom: 10px; filter: drop-shadow(0 0 8px rgba(212,175,55,.5)); line-height: 1; }
+.card-name { font-family: 'Cinzel', serif; font-size: 20px; color: var(--gold-light); letter-spacing: .12em; margin-bottom: 8px; }
+.card-meaning { font-size: 13px; color: var(--cream); opacity: .85; line-height: 1.55; max-height: 90px; overflow: hidden; }
+.card.active .face { border-color: rgba(240,214,138,.95); box-shadow: 0 0 35px rgba(212,175,55,.45); }
+.card.active { filter: brightness(1.18); }
 .gesture-hints {
-  display: flex; gap: clamp(24px, 8vw, 70px); margin-top: 4px;
+  display: flex; gap: clamp(24px, 8vw, 80px); margin-top: 4px;
   color: var(--gold-dark); font-family: 'Cinzel', serif; font-size: 10px;
   letter-spacing: .15em; text-transform: uppercase; opacity: .75;
 }
@@ -196,9 +208,9 @@ video { width: 100%; height: 100%; object-fit: cover; display: block; transform:
 .controls button:active { transform: scale(.96); }
 .controls button:hover { background: linear-gradient(135deg, rgba(212,175,55,.32), rgba(212,175,55,.12)); box-shadow: 0 0 18px rgba(212,175,55,.25); }
 .chat-panel {
-  position: absolute; right: 0; top: 0; bottom: 0; width: min(440px, 100%);
-  background: rgba(5,5,8,.92); border-left: 1px solid rgba(212,175,55,.2);
-  display: flex; flex-direction: column; backdrop-filter: blur(20px);
+  position: absolute; right: 0; top: 0; bottom: 0; width: min(460px, 100%);
+  background: rgba(5,5,8,.94); border-left: 1px solid rgba(212,175,55,.2);
+  display: flex; flex-direction: column; backdrop-filter: blur(22px);
   z-index: 10; transition: transform .5s ease;
   transform: translateX(100%);
 }
@@ -212,12 +224,14 @@ video { width: 100%; height: 100%; object-fit: cover; display: block; transform:
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px var(--gold); animation: pulse-dot 1.5s infinite; }
 @keyframes pulse-dot { 0% { opacity: 1; } 50% { opacity: .4; } 100% { opacity: 1; } }
 .chat-messages { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
-.message { max-width: 90%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.65; }
+.message { max-width: 92%; padding: 14px 18px; border-radius: 20px; font-size: 15px; line-height: 1.75; }
 .message.user { align-self: flex-end; background: rgba(90,60,20,.55); border: 1px solid rgba(212,175,55,.25); color: var(--cream); }
 .message.assistant { align-self: flex-start; background: rgba(20,20,35,.55); border: 1px solid rgba(212,175,55,.15); color: #e5e7eb; }
-.message.assistant h1, .message.assistant h2, .message.assistant h3 { color: var(--gold); font-family: 'Cinzel', serif; font-size: 15px; margin: .8em 0 .3em; }
+.message.assistant h1, .message.assistant h2, .message.assistant h3 { color: var(--gold); font-family: 'Cinzel', serif; font-size: 16px; margin: .9em 0 .4em; }
 .message.assistant strong { color: var(--gold-light); }
-.message.assistant p { margin: .4em 0; }
+.message.assistant p { margin: .5em 0; }
+.message.assistant ul { padding-left: 1.2em; margin: .5em 0; }
+.message.assistant li { margin: .3em 0; }
 .thinking { display: flex; gap: 6px; padding: 12px 16px; }
 .thinking span { width: 7px; height: 7px; background: var(--gold); border-radius: 50%; animation: think .8s infinite; }
 .thinking span:nth-child(2) { animation-delay: .15s; }
@@ -266,18 +280,16 @@ video { width: 100%; height: 100%; object-fit: cover; display: block; transform:
 @media (max-width: 768px) {
   .topbar { padding: 12px 16px; }
   .main { flex-direction: column; height: calc(100% - 50px); }
-  .video-frame { width: 100%; max-width: 100%; }
-  .fan { height: 260px; }
-  .card { width: 110px; height: 176px; margin-left: -55px; margin-top: -88px; }
-  .card-symbol { font-size: 40px; }
-  .card-name { font-size: 14px; }
-  .chat-panel { position: fixed; inset: auto 0 0 0; height: 55vh; border-left: none; border-top: 1px solid rgba(212,175,55,.2); border-radius: 20px 20px 0 0; transform: translateY(110%); }
+  .fan { height: 320px; }
+  .card { width: 120px; height: 190px; margin-left: -60px; margin-top: -95px; }
+  .card-symbol { font-size: 44px; }
+  .card-name { font-size: 15px; }
+  .chat-panel { position: fixed; inset: auto 0 0 0; height: 62vh; border-left: none; border-top: 1px solid rgba(212,175,55,.2); border-radius: 20px 20px 0 0; transform: translateY(110%); }
   .chat-panel.open { transform: translateY(0); }
 }
 @media (orientation: landscape) and (max-height: 600px) {
   .main { flex-direction: row; }
-  .video-frame { max-width: 52vw; }
-  .fan { height: 240px; }
+  .fan { height: 360px; }
   .chat-panel { height: 100%; width: 45vw; }
 }
 </style>
@@ -300,20 +312,14 @@ video { width: 100%; height: 100%; object-fit: cover; display: block; transform:
 <div id="stage" class="screen stage hidden">
   <div class="topbar">
     <div class="title-small">MYSTIC VISION</div>
-    <div id="status" class="status">请允许摄像头权限</div>
+    <div id="status" class="status">等待开始</div>
   </div>
+  <video id="video" autoplay playsinline muted></video>
   <div class="main">
-    <div class="camera-col">
-      <div class="video-frame">
-        <video id="video" autoplay playsinline muted></video>
-        <div class="video-overlay">
-          <div class="corner tl"></div>
-          <div class="corner tr"></div>
-          <div class="corner bl"></div>
-          <div class="corner br"></div>
-        </div>
-        <div id="fan" class="fan"></div>
-      </div>
+    <div class="altar">
+      <div class="altar-glow"></div>
+      <div class="ritual-ring"></div>
+      <div id="fan" class="fan"></div>
       <div class="gesture-hints" id="hints">
         <div class="hint"><span>&#8592;</span><div>挥手左/右</div></div>
         <div class="hint"><div class="fist-icon"></div><div>握拳3秒翻牌</div></div>
@@ -356,28 +362,28 @@ video { width: 100%; height: 100%; object-fit: cover; display: block; transform:
 <script>
 (function() {
 const TAROT_CARDS = [
-  { id: 0, nameZh: '愚者', nameEn: 'The Fool', symbol: '✨', meaning: '自由、自发、纯真、崭新的开始', glow: 'rgba(212,175,55,.18)' },
-  { id: 1, nameZh: '魔术师', nameEn: 'The Magician', symbol: '🎩', meaning: '力量、技艺、专注、行动、意志力', glow: 'rgba(155,89,182,.18)' },
-  { id: 2, nameZh: '女祭司', nameEn: 'The High Priestess', symbol: '🌙', meaning: '直觉、神秘、潜意识、深处的智慧', glow: 'rgba(52,152,219,.18)' },
-  { id: 3, nameZh: '皇后', nameEn: 'The Empress', symbol: '👑', meaning: '丰饶、生命力、自然、感官享受', glow: 'rgba(46,204,113,.18)' },
-  { id: 4, nameZh: '皇帝', nameEn: 'The Emperor', symbol: '⚜️', meaning: '权威、结构、领导力、父亲般的形象', glow: 'rgba(192,57,43,.18)' },
-  { id: 5, nameZh: '教皇', nameEn: 'The Hierophant', symbol: '📿', meaning: '传统、信仰、精神指引、道路、仪式', glow: 'rgba(241,196,15,.18)' },
-  { id: 6, nameZh: '恋人', nameEn: 'The Lovers', symbol: '💕', meaning: '爱、和谐、关系、价值观的选择', glow: 'rgba(233,30,99,.18)' },
-  { id: 7, nameZh: '战车', nameEn: 'The Chariot', symbol: '🏇', meaning: '意志力强、胜利、决心、自律、控制力', glow: 'rgba(127,140,141,.18)' },
-  { id: 8, nameZh: '力量', nameEn: 'Strength', symbol: '🦁', meaning: '勇气、耐性、控制本能、内在的平衡', glow: 'rgba(230,126,34,.18)' },
-  { id: 9, nameZh: '隐士', nameEn: 'The Hermit', symbol: '🕯️', meaning: '内省、孤独、寻求真理、精神引导', glow: 'rgba(52,73,94,.18)' },
-  { id: 10, nameZh: '命运之轮', nameEn: 'Wheel of Fortune', symbol: '☸️', meaning: '变迁、周期、必然、突如其来的机会', glow: 'rgba(142,68,173,.18)' },
-  { id: 11, nameZh: '正义', nameEn: 'Justice', symbol: '⚖️', meaning: '平衡、公平、责任、因果报应', glow: 'rgba(41,128,185,.18)' },
-  { id: 12, nameZh: '倒吊人', nameEn: 'The Hanged Man', symbol: '🙃', meaning: '牺牲、停滞、新视角、放手、等待', glow: 'rgba(22,160,133,.18)' },
-  { id: 13, nameZh: '死神', nameEn: 'Death', symbol: '💀', meaning: '终结、转变、清除旧物、新生的开始', glow: 'rgba(44,62,80,.2)' },
-  { id: 14, nameZh: '节制', nameEn: 'Temperance', symbol: '🍶', meaning: '平衡、融合、耐心、适度、疗愈', glow: 'rgba(26,188,156,.18)' },
-  { id: 15, nameZh: '恶魔', nameEn: 'The Devil', symbol: '😈', meaning: '诱惑、束缚、物质主义、成瘾、幻觉', glow: 'rgba(142,68,173,.2)' },
-  { id: 16, nameZh: '高塔', nameEn: 'The Tower', symbol: '🗼', meaning: '突变、觉醒、破坏、剧烈的转变', glow: 'rgba(192,57,43,.2)' },
-  { id: 17, nameZh: '星星', nameEn: 'The Star', symbol: '⭐', meaning: '希望、灵感、宁静、疗愈、对未来的憧憬', glow: 'rgba(243,156,18,.18)' },
-  { id: 18, nameZh: '月亮', nameEn: 'The Moon', symbol: '🌑', meaning: '不安、幻象、潜意识、隐藏的事实', glow: 'rgba(93,109,126,.18)' },
-  { id: 19, nameZh: '太阳', nameEn: 'The Sun', symbol: '☀️', meaning: '成功、喜悦、活力、明朗、真理', glow: 'rgba(241,196,15,.2)' },
-  { id: 20, nameZh: '审判', nameEn: 'Judgement', symbol: '🎺', meaning: '重生、呼唤、解脱、自我评价', glow: 'rgba(212,175,55,.2)' },
-  { id: 21, nameZh: '世界', nameEn: 'The World', symbol: '🌍', meaning: '完成、整合、成就、旅程的终点', glow: 'rgba(39,174,96,.18)' }
+  { id: 0, nameZh: '愚者', nameEn: 'The Fool', symbol: '✨', meaning: '自由、自发、纯真、崭新的开始', glow: 'rgba(212,175,55,.18)', deep: '愚者是一张充满无限可能的牌。它象征着旅程的起点、无畏的冒险精神以及对未知的开放态度。当这张牌出现，它在提醒你：即使前路未明，也请保持赤子之心与轻盈的步伐。此刻的你正站在悬崖边缘，但命运的风会托住你。放下过度计算，拥抱即兴与灵感，新的篇章才会真正开启。' },
+  { id: 1, nameZh: '魔术师', nameEn: 'The Magician', symbol: '🎩', meaning: '力量、技艺、专注、行动、意志力', glow: 'rgba(155,89,182,.18)', deep: '魔术师代表你拥有将想法化为现实的全部资源。他的桌上摆放着四大元素的工具，暗示你的潜能已经具足，缺的只是专注与行动。这张牌出现时，请相信自己的技艺与沟通能力，用清晰的意图引导能量。它是一张关于显化的牌：愿望并非靠等待，而是靠你亲手编织。' },
+  { id: 2, nameZh: '女祭司', nameEn: 'The High Priestess', symbol: '🌙', meaning: '直觉、神秘、潜意识、深处的智慧', glow: 'rgba(52,152,219,.18)', deep: '女祭司守护着潜意识的大门，邀请你在喧嚣中回归内在静默。她的出现意味着答案不在外界的追逐里，而在你深夜的梦境、突如其来的直觉与沉淀的直觉中。暂缓行动，更多地去观察、倾听与感受。那些无法言说的知识正在成形，等待你在合适的时机揭开面纱。' },
+  { id: 3, nameZh: '皇后', nameEn: 'The Empress', symbol: '👑', meaning: '丰饶、生命力、自然、感官享受', glow: 'rgba(46,204,113,.18)', deep: '皇后是大地的母亲，象征着创造力、滋养与丰盛的显化。她提醒你关注身体、自然与感官的美好，允许自己去享受生命的馈赠。这张牌常常预示孕育——无论是新的计划、关系还是灵感的萌芽。当你以温柔与耐心对待自己和他人时，繁荣便会像春天的花园一样自然绽放。' },
+  { id: 4, nameZh: '皇帝', nameEn: 'The Emperor', symbol: '⚜️', meaning: '权威、结构、领导力、父亲般的形象', glow: 'rgba(192,57,43,.18)', deep: '皇帝象征着秩序、纪律与稳固的权威。他提示你需要用清晰的结构、规则与长期规划来支撑目标。此刻不是凭感觉行事的时候，而是制定战略、承担责任、建立边界的时刻。皇帝的能量也代表内在的父性：保护、引导与果断。当你拥有坚定的框架，梦想才能落地生根。' },
+  { id: 5, nameZh: '教皇', nameEn: 'The Hierophant', symbol: '📿', meaning: '传统、信仰、精神指引、道路、仪式', glow: 'rgba(241,196,15,.18)', deep: '教皇连接着传统、信仰与更高层次的智慧。他可能代表一位导师、一套已经验证的体系，或你内心深处对意义的追寻。这张牌建议你尊重既定的道路，同时在其中寻找属于自己的精神领悟。有时我们需要放下对独创性的执念，先去学习、继承，再在传统的基石上长出新的枝叶。' },
+  { id: 6, nameZh: '恋人', nameEn: 'The Lovers', symbol: '💕', meaning: '爱、和谐、关系、价值观的选择', glow: 'rgba(233,30,99,.18)', deep: '恋人牌的核心并非仅仅浪漫，而是关于价值观的抉择与真实的连结。它邀请你审视自己在关系中的选择：是基于恐惧还是基于爱？这张牌也强调内在阴阳的和谐。当你做出与真实自我一致的决定时，无论是爱情、友情还是合作，都会呈现出更深层的共鸣与合一。' },
+  { id: 7, nameZh: '战车', nameEn: 'The Chariot', symbol: '🏇', meaning: '意志力强、胜利、决心、自律、控制力', glow: 'rgba(127,140,141,.18)', deep: '战车象征着通过坚定意志与自律所获得的胜利。两匹方向相反的猛兽代表内在的冲突与外在的挑战，而驾驭者以专注与勇气让它们共同前进。这张牌告诉你：成功不会来自妥协或逃避，而是来自清晰的目标、情绪管理与持续前进。保持决心，你将穿越混乱抵达终点。' },
+  { id: 8, nameZh: '力量', nameEn: 'Strength', symbol: '🦁', meaning: '勇气、耐性、控制本能、内在的平衡', glow: 'rgba(230,126,34,.18)', deep: '力量不是强硬的压制，而是温柔的坚持。牌中女子以慈悲驯服狮子，象征你内在的勇气、耐心与情绪掌控力。面对挑战时，真正的力量来自镇定、同理与持久的信念，而非爆发式的对抗。这张牌提醒你：你比自己以为的更有韧性，以柔克刚，方能化解困境。' },
+  { id: 9, nameZh: '隐士', nameEn: 'The Hermit', symbol: '🕯️', meaning: '内省、孤独、寻求真理、精神引导', glow: 'rgba(52,73,94,.18)', deep: '隐士高举的灯笼象征内在真理的微光。这是一段需要独处的时期，外界的建议再多，最终的决定仍要回到你的内心。抽到此牌，意味着宇宙邀请你暂时退后，整理经验、沉淀智慧。孤独并非惩罚，而是灵魂充电的必需。当你重新出发时，灯笼会照亮下一步。' },
+  { id: 10, nameZh: '命运之轮', nameEn: 'Wheel of Fortune', symbol: '☸️', meaning: '变迁、周期、必然、突如其来的机会', glow: 'rgba(142,68,173,.18)', deep: '命运之轮转动不息，提醒你生命充满周期与无常。好运与低谷都是更大循环的一部分，没有哪一种状态会永恒停留。这张牌出现时，往往暗示一个重要的转折点正在到来：保持开放，顺势而为。你无法控制风向，但可以调整风帆，在变化中抓住机遇。' },
+  { id: 11, nameZh: '正义', nameEn: 'Justice', symbol: '⚖️', meaning: '平衡、公平、责任、因果报应', glow: 'rgba(41,128,185,.18)', deep: '正义牌要求你以客观、公正与诚实的态度面对现实。她手中的天平象征因果：每一个选择都会带来相应的回响。这张牌提示你审视自己的责任与承诺，是否有未处理的遗留问题？唯有直面真相、承担后果，才能恢复内在的平衡，并让公正的能量回到你的生命中。' },
+  { id: 12, nameZh: '倒吊人', nameEn: 'The Hanged Man', symbol: '🙃', meaning: '牺牲、停滞、新视角、放手、等待', glow: 'rgba(22,160,133,.18)', deep: '倒吊人以颠倒的姿态看世界，象征暂停、牺牲与视角的转换。当局势看似卡住，这张牌在提醒你：有时候最勇敢的行动就是不行动，最有智慧的坚持就是放手。透过换一个角度观察，你会发现过去忽略的答案。接受这段等待期，它正在为新的领悟铺路。' },
+  { id: 13, nameZh: '死神', nameEn: 'Death', symbol: '💀', meaning: '终结、转变、清除旧物、新生的开始', glow: 'rgba(44,62,80,.2)', deep: '死神并非预示肉体的消逝，而是代表必须经历的结束与转化。旧的自我、关系、模式或环境正在退场，以便为新生命腾出空间。这张牌可能带来不安，但它同时承诺重生。允许自己哀悼过去，然后轻装前行。没有死亡，就没有春天；没有结束，就没有开始。' },
+  { id: 14, nameZh: '节制', nameEn: 'Temperance', symbol: '🍶', meaning: '平衡、融合、耐心、适度、疗愈', glow: 'rgba(26,188,156,.18)', deep: '节制天使将两种水流交融，象征对立面的调和与中庸之道。这张牌提醒你避免极端，寻找生活各领域的平衡：工作与休息、付出与接受、理性与感性。疗愈是一个渐进的过程，耐心是关键。当你以温和而持续的方式整合内在冲突时，真正的和谐才会到来。' },
+  { id: 15, nameZh: '恶魔', nameEn: 'The Devil', symbol: '😈', meaning: '诱惑、束缚、物质主义、成瘾、幻觉', glow: 'rgba(142,68,173,.2)', deep: '恶魔牌揭示那些让我们深陷其中的束缚：欲望、依赖、恐惧或对物质与权力的执着。令人惊讶的是，锁链往往是松开的——我们其实可以选择离开。这张牌邀请你诚实审视自己被什么困住，并 reclaim 自己的力量。觉醒从看见幻象开始，一旦你拒绝被控制，自由便触手可及。' },
+  { id: 16, nameZh: '高塔', nameEn: 'The Tower', symbol: '🗼', meaning: '突变、觉醒、破坏、剧烈的转变', glow: 'rgba(192,57,43,.2)', deep: '高塔代表突如其来的剧变，它摧毁的是建立在虚假之上的结构。虽然过程震撼甚至痛苦，但它为的是让你看清真相、释放不再适合你的部分。这张牌并非惩罚，而是一次强力的觉醒。当旧塔崩塌后，你会以更真实、更自由的地基重建人生。暴风雨之后，天空格外清澈。' },
+  { id: 17, nameZh: '星星', nameEn: 'The Star', symbol: '⭐', meaning: '希望、灵感、宁静、疗愈、对未来的憧憬', glow: 'rgba(243,156,18,.18)', deep: '星星牌在黑夜中点亮希望，带来宁静、疗愈与灵性的指引。经历了风暴之后，它告诉你：伤口可以被浇灌成光。保持信念，相信自己的独特天赋，并以平和的心去憧憬未来。这张牌是一张温柔的承诺：宇宙正在倾听你的愿望，只要你愿意继续相信。' },
+  { id: 18, nameZh: '月亮', nameEn: 'The Moon', symbol: '🌑', meaning: '不安、幻象、潜意识、隐藏的事实', glow: 'rgba(93,109,126,.18)', deep: '月亮映照出潜意识深处的迷雾、恐惧与未解的幻象。它提醒你，眼前所见未必是全部真相，某些信息仍被隐藏。与其在黑暗中奔跑，不如放慢脚步，分辨哪些是真实的危险，哪些只是内心的投影。透过面对恐惧、信任直觉，你会穿越迷雾，迎来黎明。' },
+  { id: 19, nameZh: '太阳', nameEn: 'The Sun', symbol: '☀️', meaning: '成功、喜悦、活力、明朗、真理', glow: 'rgba(241,196,15,.2)', deep: '太阳牌带来最纯粹的光明、喜悦与成功。它象征真相大白、活力充沛与孩童般的纯真。当这张牌出现，意味着阴霾散去，你可以放心地展现真实的自己，并享受生命的礼物。这是塔罗中最吉利的牌之一，提醒你：快乐本身就有力量，让阳光照进你的心。' },
+  { id: 20, nameZh: '审判', nameEn: 'Judgement', symbol: '🎺', meaning: '重生、呼唤、解脱、自我评价', glow: 'rgba(212,175,55,.2)', deep: '审判牌象征灵魂深处的觉醒与召唤。它代表一次重要的重生时刻：你可能听见内心真正的呼唤，决定摆脱旧有的自我评价，拥抱新的生命版本。这是一张关于宽恕、解脱与自我接纳的牌。当你回应内在的召唤，过去便不再束缚你，而你将迎来精神的复活。' },
+  { id: 21, nameZh: '世界', nameEn: 'The World', symbol: '🌍', meaning: '完成、整合、成就、旅程的终点', glow: 'rgba(39,174,96,.18)', deep: '世界牌标志着一段旅程的圆满与成就。舞者被花环环绕，象征你与宇宙节奏的同步。这不是终点，而是一个完整循环的完成，为下一个循环做准备。抽到此牌，意味着你已经整合了所学的经验，值得庆祝自己的成长。带着这份圆满感，自信地迈入新的旅程。' }
 ];
 
 const isMobile = /iPad|iPhone|iPod|Android|Mobile/i.test(navigator.userAgent);
@@ -499,7 +505,8 @@ function onResults(results) {
             activeIndex = (activeIndex + dir + TAROT_CARDS.length) % TAROT_CARDS.length;
             lastStableX = x;
             renderFan();
-            setStatus('浏览牌组');
+            const card = TAROT_CARDS[activeIndex];
+            setStatus(`浏览：${card.nameZh}`);
           }
         } else { lastStableX = x; }
       }
@@ -515,6 +522,9 @@ function renderFan() {
   fan.innerHTML = '';
   const N = TAROT_CARDS.length;
   const maxOffset = 6;
+  const isSmall = window.innerWidth <= 768;
+  const cardW = isSmall ? 120 : 170;
+  const spread = isSmall ? 52 : 80;
   for (let i = 0; i < N; i++) {
     let offset = i - activeIndex;
     if (offset > N / 2) offset -= N;
@@ -525,11 +535,15 @@ function renderFan() {
     const isActive = i === activeIndex;
     el.className = 'card' + (isActive ? ' active' : '') + (isFlipped && isActive ? ' flipped' : '');
     const rot = offset * 9;
-    const tx = offset * 62;
-    const tz = (1 - Math.abs(offset) / maxOffset) * 80;
+    const tx = offset * spread;
+    const tz = (1 - Math.abs(offset) / maxOffset) * 100;
     const scale = Math.max(0.55, 0.95 - Math.abs(offset) * 0.07) * (isActive ? 1.12 : 1);
     const z = 60 - Math.abs(offset);
     const opacity = Math.max(0.25, 1 - Math.abs(offset) * 0.18);
+    el.style.width = cardW + 'px';
+    el.style.height = (cardW * 1.588) + 'px';
+    el.style.marginLeft = (-cardW / 2) + 'px';
+    el.style.marginTop = (-cardW * 1.588 / 2) + 'px';
     el.style.transform = `translate(-50%, -50%) translateX(${tx}px) translateZ(${tz}px) rotate(${rot}deg) scale(${scale})`;
     el.style.zIndex = z;
     el.style.opacity = opacity;
@@ -570,8 +584,13 @@ function initialReading() {
   chatMessages.innerHTML = '';
   chatHistory = [];
   const question = userQuestion || '寻求命运的综合指引';
-  const prompt = `【占卜启动】用户提出的问题是："${question}"。抽中的塔罗牌是：${currentCard.nameZh}（${currentCard.nameEn}）。牌面基础含义：${currentCard.meaning}。
-请你作为 Mystic Vision 导师，针对用户的【具体问题】给出深度的塔罗分析。结合牌面背后的象征意义，指出目前问题的核心、可能的障碍以及未来的启示。请保持专业、神秘且充满智慧的语调。使用 Markdown 格式（标题、加粗、列表）增强可读性。`;
+  const prompt = `【占卜启动】用户的具体问题是："${question}"。抽中的塔罗牌是：${currentCard.nameZh}（${currentCard.nameEn}）。牌面基础含义：${currentCard.meaning}。
+请你作为 Mystic Vision 导师，围绕这张牌与用户的具体问题，撰写一篇 600-900 字的深度塔罗解读。请包含以下部分：
+1. 牌面象征与核心讯息
+2. 针对用户问题的现状分析
+3. 潜在挑战与阴影面
+4. 未来启示与行动建议
+使用 Markdown 格式（标题、加粗、列表）增强可读性，语气专业、神秘且富有同理心。`;
   chatHistory.push({ role: 'user', content: prompt });
   addAssistantMsg();
   streamAI();
@@ -615,9 +634,9 @@ async function streamAI() {
   } catch (err) {
     console.error(err);
     if (!apiKey || err.message === 'nokey') {
-      full = `✨ 离线解读\n\n你抽到了 **${currentCard.nameZh}**（${currentCard.nameEn}）。\n\n${currentCard.meaning}\n\n请在「设置 AI Key」中填入 Gemini 或 DeepSeek Key，即可获得 AI 导师的深度流式解读。`;
+      full = `## ✨ ${currentCard.nameZh}（${currentCard.nameEn}）\n\n${currentCard.deep}\n\n---\n\n> 离线模式下仍可查看牌面深义。如需 AI 导师针对你的问题继续展开，请在「设置 AI Key」中填入 Gemini 或 DeepSeek Key。`;
     } else {
-      full = `✨ 解读服务暂不可用：${err.message}\n\n你抽到了 **${currentCard.nameZh}**（${currentCard.nameEn}）。\n\n${currentCard.meaning}`;
+      full = `## ✨ ${currentCard.nameZh}（${currentCard.nameEn}）\n\n${currentCard.deep}\n\n---\n\n> 解读服务暂不可用：${err.message}`;
     }
     updateMsg(activeMsgEl, full);
   } finally {
@@ -661,7 +680,7 @@ async function* geminiStream() {
 
 async function* deepseekStream() {
   const url = 'https://api.deepseek.com/v1/chat/completions';
-  const messages = [{ role: 'system', content: "你是资深塔罗占卜导师 Mystic Vision。请根据抽出的牌面含义和用户占卜场景，提供充满智慧、神秘感且富有同理心的解读。使用 Markdown 格式输出。" }];
+  const messages = [{ role: 'system', content: "你是资深塔罗占卜导师 Mystic Vision。请根据抽出的牌面含义和用户占卜场景，提供充满智慧、神秘感且富有同理心的深度解读。使用 Markdown 格式输出，字数 600-900 字，包含牌面象征、现状分析、挑战阴影与未来启示。" }];
   for (const m of chatHistory) messages.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content });
   const resp = await fetch(url, {
     method: 'POST',
@@ -707,8 +726,8 @@ function resetAll() {
 }
 
 document.getElementById('ascendBtn').addEventListener('click', startDivination);
-document.getElementById('prevBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex - 1 + TAROT_CARDS.length) % TAROT_CARDS.length; renderFan(); });
-document.getElementById('nextBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex + 1) % TAROT_CARDS.length; renderFan(); });
+document.getElementById('prevBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex - 1 + TAROT_CARDS.length) % TAROT_CARDS.length; renderFan(); const c = TAROT_CARDS[activeIndex]; setStatus(`浏览：${c.nameZh}`); });
+document.getElementById('nextBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex + 1) % TAROT_CARDS.length; renderFan(); const c = TAROT_CARDS[activeIndex]; setStatus(`浏览：${c.nameZh}`); });
 document.getElementById('flipBtn').addEventListener('click', executeFlip);
 document.getElementById('resetBtn').addEventListener('click', resetAll);
 document.getElementById('apiBtn').addEventListener('click', () => {
