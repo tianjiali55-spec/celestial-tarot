@@ -126,7 +126,7 @@ body {
 .top-actions button:active { transform: scale(.96); }
 .top-actions button:hover { background: linear-gradient(135deg, rgba(212,175,55,.32), rgba(212,175,55,.12)); box-shadow: 0 0 14px rgba(212,175,55,.25); }
 #video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.gesture-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 8; }
+.gesture-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .main { flex: 1; display: flex; width: 100%; height: calc(100% - 56px); position: relative; }
 .altar {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -338,6 +338,7 @@ body {
 </div>
 
 <div id="stage" class="screen stage hidden">
+  <canvas id="gestureCanvas" class="gesture-canvas"></canvas>
   <div class="topbar">
     <div class="title-small">MYSTIC VISION</div>
     <div id="status" class="status">等待开始</div>
@@ -350,7 +351,6 @@ body {
   <div class="main">
 <div class="altar">
       <div class="altar-glow"></div>
-      <canvas id="gestureCanvas" class="gesture-canvas"></canvas>
       <div class="ritual-ring"></div>
       <div id="fan" class="fan"></div>
       <div class="gesture-hints" id="hints">
@@ -476,6 +476,7 @@ function resizeCanvas() {
 }
 
 function emit(count, x, y, vxBase, vyBase, color, speed, life) {
+  if (particles.length > 400) return;
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
     const sp = speed * (0.5 + Math.random());
@@ -491,52 +492,53 @@ function emit(count, x, y, vxBase, vyBase, color, speed, life) {
 }
 
 function emitTrail(x, y) {
-  emit(2, x, y, 0, 0, 'rgba(212,175,55,0.55)', 0.6, 28 + Math.random() * 18);
+  const hue = 35 + Math.random() * 20;
+  emit(3, x, y, 0, 0, `hsla(${hue}, 80%, 65%, 0.55)`, 0.8, 30 + Math.random() * 25);
 }
 
 function emitWaveBurst(x, y, dir) {
   const color = dir > 0 ? 'rgba(240,214,138,0.9)' : 'rgba(212,175,55,0.9)';
-  for (let i = 0; i < 28; i++) {
-    const angle = (dir > 0 ? 0 : Math.PI) + (Math.random() - 0.5) * 1.3;
-    const sp = 3 + Math.random() * 5;
+  for (let i = 0; i < 44; i++) {
+    const angle = (dir > 0 ? 0 : Math.PI) + (Math.random() - 0.5) * 1.6;
+    const sp = 4 + Math.random() * 7;
     particles.push({
       x, y,
       vx: Math.cos(angle) * sp,
-      vy: Math.sin(angle) * sp - 1 - Math.random(),
-      life: 50, maxLife: 50,
-      size: 2 + Math.random() * 2.5,
+      vy: Math.sin(angle) * sp - 1 - Math.random() * 2,
+      life: 65, maxLife: 65,
+      size: 2 + Math.random() * 3,
       color
     });
   }
 }
 
 function emitFistCharge(cx, cy, progress) {
-  const count = progress < 0.85 ? 2 : 5;
+  const count = progress < 0.85 ? 3 : 7;
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const r = 90 + Math.random() * 70;
+    const r = 120 + Math.random() * 100;
     particles.push({
       x: cx + Math.cos(angle) * r,
       y: cy + Math.sin(angle) * r,
-      vx: -Math.cos(angle) * (2 + progress * 4),
-      vy: -Math.sin(angle) * (2 + progress * 4),
-      life: 32, maxLife: 32,
-      size: 2 + Math.random() * 2,
+      vx: -Math.cos(angle) * (2.5 + progress * 5),
+      vy: -Math.sin(angle) * (2.5 + progress * 5),
+      life: 38, maxLife: 38,
+      size: 2 + Math.random() * 2.5,
       color: `rgba(240,214,138,${0.55 + progress * 0.45})`
     });
   }
 }
 
 function emitFlipBurst(cx, cy) {
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 140; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const sp = 3 + Math.random() * 8;
+    const sp = 4 + Math.random() * 10;
     particles.push({
       x: cx, y: cy,
       vx: Math.cos(angle) * sp,
       vy: Math.sin(angle) * sp,
-      life: 80, maxLife: 80,
-      size: 2 + Math.random() * 3,
+      life: 90, maxLife: 90,
+      size: 2 + Math.random() * 3.5,
       color: `rgba(240,${214 - Math.random()*40|0},${138 - Math.random()*40|0},0.9)`
     });
   }
@@ -546,6 +548,15 @@ function updateParticles() {
   const w = canvas._w || canvas.getBoundingClientRect().width;
   const h = canvas._h || canvas.getBoundingClientRect().height;
   ctx.clearRect(0, 0, w, h);
+  if (particles.length < 120 && Math.random() < 0.08) {
+    const edge = Math.floor(Math.random() * 4);
+    let ax = 0, ay = 0, avx = 0, avy = 0;
+    if (edge === 0) { ax = Math.random() * w; ay = -4; avx = (Math.random() - 0.5) * 0.4; avy = 0.3 + Math.random() * 0.4; }
+    else if (edge === 1) { ax = Math.random() * w; ay = h + 4; avx = (Math.random() - 0.5) * 0.4; avy = -0.3 - Math.random() * 0.4; }
+    else if (edge === 2) { ax = -4; ay = Math.random() * h; avx = 0.3 + Math.random() * 0.4; avy = (Math.random() - 0.5) * 0.4; }
+    else { ax = w + 4; ay = Math.random() * h; avx = -0.3 - Math.random() * 0.4; avy = (Math.random() - 0.5) * 0.4; }
+    particles.push({ x: ax, y: ay, vx: avx, vy: avy, life: 160, maxLife: 160, size: 1 + Math.random(), color: `rgba(212,175,55,${0.25 + Math.random() * 0.25})` });
+  }
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.x += p.vx;
