@@ -405,6 +405,7 @@ const TAROT_CARDS = [
 const isMobile = /iPad|iPhone|iPod|Android|Mobile/i.test(navigator.userAgent);
 let hands = null, camera = null, modelReady = false;
 let activeIndex = Math.floor(TAROT_CARDS.length / 2);
+let scrollOffset = activeIndex;
 let isStarted = false, isFlipped = false, isAIThinking = false;
 let lastHandX = null, lastStableX = null, fistStart = null, lastFistTime = null;
 let apiProvider = 'gemini', apiKey = '';
@@ -614,6 +615,7 @@ function onResults(results) {
   if (!isStarted || isFlipped) return;
   const now = Date.now();
   const hasHand = results.multiHandLandmarks && results.multiHandLandmarks.length > 0;
+  const N = TAROT_CARDS.length;
   if (hasHand) {
     const hand = results.multiHandLandmarks[0];
     const x = hand[9].x;
@@ -632,23 +634,22 @@ function onResults(results) {
       const since = lastFistTime ? now - lastFistTime : Infinity;
       if (since > FIST_LOSS) {
         fistStart = null; lastFistTime = null;
-        if (lastStableX !== null) {
-          const dx = x - lastStableX;
-          if (Math.abs(dx) > SWIPE_THRESH) {
-            const dir = dx > 0 ? 1 : -1;
-           activeIndex = (activeIndex + dir + TAROT_CARDS.length) % TAROT_CARDS.length;
-           lastStableX = x;
-           renderFan();
-            setStatus('浏览牌组');
-            emitWaveBurst(handX, handY, dir);
-         }
-        } else { lastStableX = x; }
+        const target = (1 - x) * (N - 1);
+        scrollOffset += (target - scrollOffset) * 0.12;
+        const nextActive = Math.round(scrollOffset);
+        if (nextActive !== activeIndex) { activeIndex = nextActive; }
+        renderFan();
+        setStatus('浏览牌组');
       }
     }
-    lastHandX = x;
   } else {
     const since = lastFistTime ? now - lastFistTime : Infinity;
-    if (since > FIST_LOSS) { fistStart = null; lastFistTime = null; lastHandX = null; lastStableX = null; }
+    if (since > FIST_LOSS) { fistStart = null; lastFistTime = null; }
+    const target = Math.round(scrollOffset);
+    scrollOffset += (target - scrollOffset) * 0.06;
+    const nextActive = Math.round(scrollOffset);
+    if (nextActive !== activeIndex) { activeIndex = nextActive; }
+    renderFan();
   }
 }
 
@@ -660,13 +661,13 @@ function renderFan() {
   const cardW = isSmall ? 120 : 170;
   const spread = isSmall ? 52 : 80;
   for (let i = 0; i < N; i++) {
-    let offset = i - activeIndex;
+    let offset = i - scrollOffset;
     if (offset > N / 2) offset -= N;
     if (offset < -N / 2) offset += N;
     if (Math.abs(offset) > maxOffset) continue;
     const card = TAROT_CARDS[i];
     const el = document.createElement('div');
-    const isActive = i === activeIndex;
+    const isActive = Math.abs(offset) < 0.5;
     el.className = 'card' + (isActive ? ' active' : '') + (isFlipped && isActive ? ' flipped' : '');
     const rot = offset * 9;
     const tx = offset * spread;
@@ -693,7 +694,12 @@ function renderFan() {
       </div>`;
     if (!isFlipped) {
       el.style.pointerEvents = 'auto';
-      el.addEventListener('click', () => { activeIndex = i; renderFan(); });
+      el.addEventListener('click', () => {
+        const delta = ((i - activeIndex + N + Math.floor(N / 2)) % N) - Math.floor(N / 2);
+        scrollOffset += delta;
+        activeIndex = i;
+        renderFan();
+      });
     }
     fan.appendChild(el);
   }
@@ -702,6 +708,8 @@ function renderFan() {
 function executeFlip() {
   if (isFlipped) return;
   isFlipped = true;
+  activeIndex = ((Math.round(scrollOffset) % TAROT_CARDS.length) + TAROT_CARDS.length) % TAROT_CARDS.length;
+  scrollOffset = activeIndex;
   currentCard = TAROT_CARDS[activeIndex];
   const flipRect = canvas.getBoundingClientRect();
   emitFlipBurst(flipRect.width / 2, flipRect.height / 2);
@@ -850,6 +858,7 @@ async function* deepseekStream() {
 function resetAll() {
   isFlipped = false;
   activeIndex = Math.floor(TAROT_CARDS.length / 2);
+  scrollOffset = activeIndex;
   chatPanel.classList.remove('open');
   chatMessages.innerHTML = '';
   chatHistory = [];
@@ -864,8 +873,8 @@ function resetAll() {
 }
 
 document.getElementById('ascendBtn').addEventListener('click', startDivination);
-document.getElementById('prevBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex - 1 + TAROT_CARDS.length) % TAROT_CARDS.length; renderFan(); setStatus('浏览牌组'); });
-document.getElementById('nextBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex + 1) % TAROT_CARDS.length; renderFan(); setStatus('浏览牌组'); });
+document.getElementById('prevBtn').addEventListener('click', () => { if (isFlipped) return; const N = TAROT_CARDS.length; scrollOffset -= 1; if (scrollOffset < 0) scrollOffset += N; activeIndex = Math.round(scrollOffset); renderFan(); setStatus('浏览牌组'); });
+document.getElementById('nextBtn').addEventListener('click', () => { if (isFlipped) return; const N = TAROT_CARDS.length; scrollOffset += 1; if (scrollOffset >= N) scrollOffset -= N; activeIndex = Math.round(scrollOffset); renderFan(); setStatus('浏览牌组'); });
 document.getElementById('flipBtn').addEventListener('click', executeFlip);
 document.getElementById('resetBtn').addEventListener('click', resetAll);
 document.getElementById('topReset').addEventListener('click', resetAll);
