@@ -741,7 +741,6 @@ function resetAll() {
 }
 
 document.getElementById('ascendBtn').addEventListener('click', startDivination);
-document.getElementById('prevBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex - 1 + TAROT_CARDS.length) % TAROT_CARDS.length; renderFan(); const c = TAROT_CARDS[activeIndex]; setStatus(`浏览：${c.nameZh}`); });
 document.getElementById('prevBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex - 1 + TAROT_CARDS.length) % TAROT_CARDS.length; renderFan(); setStatus('浏览牌组'); });
 document.getElementById('nextBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex + 1) % TAROT_CARDS.length; renderFan(); setStatus('浏览牌组'); });
 document.getElementById('flipBtn').addEventListener('click', executeFlip);
@@ -787,5 +786,3 @@ renderFan();
 </script>
 </body>
 </html>
- document.getElementById('prevBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex - 1 + TAROT_CARDS.length) % TAROT_CARDS.length; renderFan(); setStatus('浏览牌组'); });
- document.getElementById('nextBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex + 1) % TAROT_CARDS.length; renderFan(); setStatus('浏览牌组'); });
