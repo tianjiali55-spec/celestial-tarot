@@ -115,6 +115,16 @@ body {
 }
 .title-small { font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold); letter-spacing: .25em; }
 .status { font-size: 13px; color: var(--gold-light); letter-spacing: .05em; }
+.top-actions { display: flex; gap: 8px; align-items: center; }
+.top-actions button {
+  background: linear-gradient(135deg, rgba(212,175,55,.18), rgba(212,175,55,.08));
+  border: 1px solid rgba(212,175,55,.6); color: var(--gold-light);
+  padding: 8px 14px; border-radius: 20px; cursor: pointer;
+  font-family: inherit; font-size: 12px; letter-spacing: .04em;
+  transition: all .25s; backdrop-filter: blur(4px); touch-action: manipulation;
+}
+.top-actions button:active { transform: scale(.96); }
+.top-actions button:hover { background: linear-gradient(135deg, rgba(212,175,55,.32), rgba(212,175,55,.12)); box-shadow: 0 0 14px rgba(212,175,55,.25); }
 #video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .main { flex: 1; display: flex; width: 100%; height: calc(100% - 56px); position: relative; }
 .altar {
@@ -313,6 +323,10 @@ body {
   <div class="topbar">
     <div class="title-small">MYSTIC VISION</div>
     <div id="status" class="status">等待开始</div>
+    <div class="top-actions">
+      <button id="topReset" class="hidden">重新占卜</button>
+      <button id="topApi">设置 AI Key</button>
+    </div>
   </div>
   <video id="video" autoplay playsinline muted></video>
   <div class="main">
@@ -576,6 +590,7 @@ function executeFlip() {
   document.getElementById('flipBtn').classList.add('hidden');
   document.getElementById('prevBtn').classList.add('hidden');
   document.getElementById('nextBtn').classList.add('hidden');
+  document.getElementById('topReset').classList.remove('hidden');
   document.getElementById('resetBtn').classList.remove('hidden');
   initialReading();
 }
@@ -720,6 +735,7 @@ function resetAll() {
   document.getElementById('flipBtn').classList.remove('hidden');
   document.getElementById('prevBtn').classList.remove('hidden');
   document.getElementById('nextBtn').classList.remove('hidden');
+  document.getElementById('topReset').classList.add('hidden');
   document.getElementById('resetBtn').classList.add('hidden');
   renderFan();
   setStatus('挥动左手或右手浏览牌组，握拳3秒翻牌');
@@ -730,7 +746,13 @@ document.getElementById('prevBtn').addEventListener('click', () => { if (isFlipp
 document.getElementById('nextBtn').addEventListener('click', () => { if (isFlipped) return; activeIndex = (activeIndex + 1) % TAROT_CARDS.length; renderFan(); const c = TAROT_CARDS[activeIndex]; setStatus(`浏览：${c.nameZh}`); });
 document.getElementById('flipBtn').addEventListener('click', executeFlip);
 document.getElementById('resetBtn').addEventListener('click', resetAll);
+document.getElementById('topReset').addEventListener('click', resetAll);
 document.getElementById('apiBtn').addEventListener('click', () => {
+  apiKeyInput.value = apiKey;
+  apiPanel.classList.remove('hidden');
+  veil.classList.remove('hidden');
+});
+document.getElementById('topApi').addEventListener('click', () => {
   apiKeyInput.value = apiKey;
   apiPanel.classList.remove('hidden');
   veil.classList.remove('hidden');
